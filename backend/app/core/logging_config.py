@@ -37,7 +37,7 @@ def configure_logging(
 	logger.setLevel(log_level.upper())
 	logger.propagate = False
 	log_file_path.parent.mkdir(parents=True, exist_ok=True)
-	for handler in logger.handlers:
+	for handler in list(logger.handlers):
 		handler.close()
 		logger.removeHandler(handler)
 

@@ -1,0 +1,122 @@
+[
+	{
+		"title": "Frankenstein",
+		"author": "Mary Shelley",
+		"summary": "Victor Frankenstein creates a living being through an ambitious scientific experiment. The creature's rejection and isolation lead both creator and creation into a destructive pursuit across Europe and the Arctic.",
+		"description": "A Gothic novel about scientific ambition, responsibility, isolation, and compassion.",
+		"metadata": {
+			"year": "1818",
+			"genre": "Gothic fiction"
+		}
+	},
+	{
+		"title": "Pride and Prejudice",
+		"author": "Jane Austen",
+		"summary": "Elizabeth Bennet navigates family pressure, social expectations, and her first impressions of the proud Mr. Darcy. As misunderstandings give way to self-knowledge, both must reconsider their judgments before they can find mutual respect.",
+		"description": "A social comedy about manners, reputation, family, and changing first impressions.",
+		"metadata": {
+			"year": "1813",
+			"genre": "Romance"
+		}
+	},
+	{
+		"title": "The Wonderful Wizard of Oz",
+		"author": "L. Frank Baum",
+		"summary": "A Kansas girl named Dorothy is carried by a cyclone to the magical land of Oz. She travels toward the Emerald City with three companions, each seeking something they believe the wizard can provide, while learning that courage and belonging may already be within reach.",
+		"description": "A fantasy adventure about friendship, courage, home, and self-belief.",
+		"metadata": {
+			"year": "1900",
+			"genre": "Fantasy"
+		}
+	},
+	{
+		"title": "Jane Eyre",
+		"author": "Charlotte Bronte",
+		"summary": "Jane Eyre grows from an isolated orphan into an independent governess who finds love at Thornfield Hall. Her commitment to conscience and equality is tested when she discovers a secret that makes a future with Mr. Rochester impossible without sacrifice.",
+		"description": "A Gothic coming-of-age novel about independence, morality, love, and social class.",
+		"metadata": {
+			"year": "1847",
+			"genre": "Gothic fiction"
+		}
+	},
+	{
+		"title": "Moby-Dick",
+		"author": "Herman Melville",
+		"summary": "Ishmael joins the whaling ship Pequod and becomes part of Captain Ahab's obsessive hunt for the great white whale Moby Dick. The voyage expands into a meditation on fate, knowledge, nature, and the limits of human control.",
+		"description": "An expansive sea novel about obsession, fate, nature, and the search for meaning.",
+		"metadata": {
+			"year": "1851",
+			"genre": "Adventure"
+		}
+	},
+	{
+		"title": "The Adventures of Sherlock Holmes",
+		"author": "Arthur Conan Doyle",
+		"summary": "Dr. Watson recounts a series of cases solved by the brilliant and eccentric Sherlock Holmes. Holmes combines close observation, logical inference, and theatrical disguises to expose hidden motives and resolve apparently impossible mysteries.",
+		"description": "A collection of detective stories centered on observation, deduction, and justice.",
+		"metadata": {
+			"year": "1892",
+			"genre": "Mystery"
+		}
+	},
+	{
+		"title": "Little Women",
+		"author": "Louisa May Alcott",
+		"summary": "The four March sisters grow up during the American Civil War while balancing ambition, family duty, friendship, and love. Their different temperaments lead them along separate paths, but shared affection continues to shape their difficult choices.",
+		"description": "A family novel about sisterhood, growing up, creativity, and moral character.",
+		"metadata": {
+			"year": "1868",
+			"genre": "Family fiction"
+		}
+	},
+	{
+		"title": "The Picture of Dorian Gray",
+		"author": "Oscar Wilde",
+		"summary": "Dorian Gray wishes that a portrait would bear the marks of his aging and wrongdoing instead of his own face. His wish comes true, allowing him to pursue pleasure without visible consequences until the hidden corruption of the portrait forces a final reckoning.",
+		"description": "A philosophical Gothic novel about beauty, vanity, influence, and moral consequence.",
+		"metadata": {
+			"year": "1890",
+			"genre": "Gothic fiction"
+		}
+	},
+	{
+		"title": "The Time Machine",
+		"author": "H. G. Wells",
+		"summary": "An inventor travels far into Earth's future and encounters the gentle Eloi and the subterranean Morlocks. His journey becomes a warning about class division, technological progress, and the long consequences of choices made in the present.",
+		"description": "A science-fiction novella about time travel, social inequality, and human evolution.",
+		"metadata": {
+			"year": "1895",
+			"genre": "Science fiction"
+		}
+	},
+	{
+		"title": "The Count of Monte Cristo",
+		"author": "Alexandre Dumas",
+		"summary": "Edmond Dantes is falsely imprisoned just as he is about to marry and begin a promising life. After escaping and gaining a fortune, he constructs a new identity and carefully pursues justice against the people who betrayed him.",
+		"description": "A historical adventure about betrayal, imprisonment, revenge, and forgiveness.",
+		"metadata": {
+			"year": "1844",
+			"genre": "Adventure"
+		}
+	},
+	{
+		"title": "The Secret Garden",
+		"author": "Frances Hodgson Burnett",
+		"summary": "After becoming orphaned, Mary Lennox is sent to live at a remote English manor where she discovers a locked garden and a lonely cousin. Caring for the neglected garden gives the children purpose and helps them recover their health, trust, and joy.",
+		"description": "A children's novel about friendship, renewal, nature, and emotional healing.",
+		"metadata": {
+			"year": "1911",
+			"genre": "Children's fiction"
+		}
+	},
+	{
+		"title": "Twenty Thousand Leagues Under the Seas",
+		"author": "Jules Verne",
+		"summary": "Professor Aronnax, Conseil, and Ned Land are captured aboard Captain Nemo's submarine, the Nautilus. Their underwater voyage reveals extraordinary marine landscapes and Nemo's principled but vengeful resistance to the surface world.",
+		"description": "A scientific adventure about exploration, invention, freedom, and isolation.",
+		"metadata": {
+			"year": "1870",
+			"genre": "Science fiction"
+		}
+	}
+]

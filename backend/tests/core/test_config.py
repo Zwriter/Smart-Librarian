@@ -33,3 +33,8 @@ def test_settings_reject_empty_cors_origin() -> None:
 def test_settings_reject_privacy_mode_that_disables_redaction() -> None:
     with pytest.raises(ValidationError):
         Settings(_env_file=None, openai_api_key="test-key", log_privacy_mode="plain")
+
+
+def test_settings_reject_wildcard_cors_origin() -> None:
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, openai_api_key="test-key", cors_allowed_origins=["*"])

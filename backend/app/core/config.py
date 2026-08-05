@@ -29,6 +29,7 @@ class Settings(BaseSettings):
 	top_k_results: int = Field(default=5, gt=0, le=20)
 	max_question_length: int = Field(default=2_000, gt=0)
 	max_history_messages: int = Field(default=20, gt=0)
+	max_request_body_bytes: int = Field(default=100_000, gt=0)
 	log_level: str = Field(default="INFO", min_length=1)
 	log_console_enabled: bool = True
 	log_file_enabled: bool = True
@@ -52,7 +53,7 @@ class Settings(BaseSettings):
 	@classmethod
 	def validate_origins(cls, value: list[str]) -> list[str]:
 		origins = [origin.strip().rstrip("/") for origin in value]
-		if not origins or any(not origin for origin in origins):
+		if not origins or any(not origin or origin == "*" for origin in origins):
 			raise ValueError("cors_allowed_origins must contain at least one non-empty origin")
 		return origins
 

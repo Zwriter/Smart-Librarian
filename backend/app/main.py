@@ -18,8 +18,10 @@ from app.core.correlation import (
 	set_correlation_id,
 )
 from app.core.exceptions import (
+	BookDataError,
 	BookNotFoundError,
 	ChatServiceError,
+	FilterConfigurationError,
 	InputRejectedError,
 	InputValidationError,
 	LLMClientError,
@@ -77,6 +79,21 @@ def create_app(
 		aggregator = UsageAggregator(pricing)
 		usage_token = set_usage_aggregator(aggregator)
 		started_at = perf_counter()
+		max_body_bytes = settings.max_request_body_bytes if settings else 100_000
+		content_length = request.headers.get("content-length")
+		if (
+			content_length is not None
+			and content_length.isdigit()
+			and int(content_length) > max_body_bytes
+		):
+			response = JSONResponse(
+				status_code=413,
+				content={"detail": "Request body exceeds the maximum allowed size."},
+			)
+			response.headers[CORRELATION_HEADER] = correlation_id
+			reset_usage_aggregator(usage_token)
+			reset_correlation_id(token)
+			return response
 		safe_log(
 			logger,
 			logging.INFO,
@@ -162,7 +179,7 @@ def create_app(
 	async def handle_missing_book(_request: Request, error: BookNotFoundError) -> JSONResponse:
 		return JSONResponse(status_code=404, content={"detail": str(error)})
 
-	async def handle_service_failure(_request: Request, _error: RuntimeError) -> JSONResponse:
+	async def handle_service_failure(_request: Request, _error: Exception) -> JSONResponse:
 		return JSONResponse(
 			status_code=502,
 			content={"detail": "The recommendation service is temporarily unavailable."},
@@ -172,6 +189,8 @@ def create_app(
 	application.add_exception_handler(RetrievalError, handle_service_failure)
 	application.add_exception_handler(ToolCallError, handle_service_failure)
 	application.add_exception_handler(ChatServiceError, handle_service_failure)
+	application.add_exception_handler(BookDataError, handle_service_failure)
+	application.add_exception_handler(FilterConfigurationError, handle_service_failure)
 
 	@application.get("/health", tags=["health"])
 	def health() -> dict[str, str]:
@@ -198,14 +217,14 @@ def create_app(
 				readiness_settings.chroma_collection_name,
 			)
 		except Exception as error:
-			application.state.readiness_error = error
+			application.state.readiness_error_type = type(error).__name__
 			from fastapi import HTTPException
 
 			raise HTTPException(
 				status_code=503,
 				detail="The application is not ready.",
 			) from error
-		application.state.readiness_error = None
+		application.state.readiness_error_type = None
 		return {"status": "ready"}
 
 	return application

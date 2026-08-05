@@ -37,3 +37,19 @@ def test_chat_route_returns_stable_validation_error() -> None:
 
 	assert response.status_code == 422
 	assert "detail" in response.json()
+
+
+def test_chat_route_rejects_oversized_request_without_internal_details() -> None:
+	application = create_app()
+	client = TestClient(application)
+
+	response = client.post(
+		"/chat",
+		content='{"question":"Find a book"}',
+		headers={"Content-Length": "100001", "Content-Type": "application/json"},
+	)
+
+	assert response.status_code == 413
+	assert response.json() == {"detail": "Request body exceeds the maximum allowed size."}
+	assert "Traceback" not in response.text
+	assert "C:\\" not in response.text

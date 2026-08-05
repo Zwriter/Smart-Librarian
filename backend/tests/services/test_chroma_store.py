@@ -15,6 +15,12 @@ class FakeCollection:
 		self.embedding = kwargs["query_embeddings"]
 		return self.result
 
+	def get(self, ids: list[str]) -> dict[str, Any]:
+		return {"ids": ids[:1]}
+
+	def upsert(self, **kwargs: Any) -> None:
+		self.upserted = kwargs
+
 
 class FakeChromaClient:
 	def __init__(self, collection: FakeCollection) -> None:
@@ -45,3 +51,18 @@ def test_chroma_store_wraps_initialization_errors() -> None:
 
 	with pytest.raises(RetrievalError, match="Unable to initialize vector store"):
 		ChromaVectorStore(Path(".chroma"), "books", client=FailingClient())
+
+
+def test_chroma_store_upserts_records_and_reports_existing_ids() -> None:
+	collection = FakeCollection()
+	store = ChromaVectorStore(Path(".chroma"), "books", client=FakeChromaClient(collection))
+
+	existing = store.upsert(
+		["book-1", "book-2"],
+		["one", "two"],
+		[[0.1], [0.2]],
+		[{"title": "One"}, {"title": "Two"}],
+	)
+
+	assert existing == {"book-1"}
+	assert collection.upserted["ids"] == ["book-1", "book-2"]

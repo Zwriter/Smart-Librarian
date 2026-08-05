@@ -32,3 +32,22 @@ class ChromaVectorStore:
 			return cast(dict[str, Any], result)
 		except Exception as error:
 			raise RetrievalError("Vector store query failed") from error
+
+	def upsert(
+		self,
+		ids: Sequence[str],
+		documents: Sequence[str],
+		embeddings: Sequence[Sequence[float]],
+		metadatas: Sequence[dict[str, str]],
+	) -> set[str]:
+		try:
+			existing = self._collection.get(ids=list(ids)).get("ids", [])
+			self._collection.upsert(
+				ids=list(ids),
+				documents=list(documents),
+				embeddings=[list(embedding) for embedding in embeddings],
+				metadatas=list(metadatas),
+			)
+			return {item for item in existing if isinstance(item, str)}
+		except Exception as error:
+			raise RetrievalError("Vector store upsert failed") from error

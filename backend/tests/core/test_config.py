@@ -9,6 +9,7 @@ def test_settings_use_backend_defaults() -> None:
     assert settings.openai_embedding_model == "text-embedding-3-small"
     assert settings.top_k_results == 5
     assert settings.book_data_path.name == "book_summaries.json"
+    assert settings.log_level == "INFO"
 
 
 def test_settings_reject_missing_api_key() -> None:

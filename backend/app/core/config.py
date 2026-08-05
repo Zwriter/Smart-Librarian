@@ -28,6 +28,10 @@ class Settings(BaseSettings):
 	top_k_results: int = Field(default=5, gt=0, le=20)
 	max_question_length: int = Field(default=2_000, gt=0)
 	max_history_messages: int = Field(default=20, gt=0)
+	log_level: str = Field(default="INFO", min_length=1)
+	log_file_path: Path = BACKEND_ROOT / "logs" / "app.log"
+	log_max_bytes: int = Field(default=10_000_000, gt=0)
+	log_backup_count: int = Field(default=5, ge=0)
 
 	@field_validator(
 		"openai_chat_model",

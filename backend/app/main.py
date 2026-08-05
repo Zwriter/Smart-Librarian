@@ -16,6 +16,7 @@ from app.core.exceptions import (
 	RetrievalError,
 	ToolCallError,
 )
+from app.core.logging_config import configure_logging
 
 DEFAULT_CORS_ORIGINS = ["http://localhost:5173", "http://localhost:3000"]
 
@@ -26,6 +27,14 @@ def create_app(
 ) -> FastAPI:
 	"""Create the API application without requiring an API key at import time."""
 	application = FastAPI(title="Smart Librarian API", version="0.1.0")
+	if settings is not None:
+		settings.log_file_path.parent.mkdir(parents=True, exist_ok=True)
+		configure_logging(
+			settings.log_level,
+			settings.log_file_path,
+			settings.log_max_bytes,
+			settings.log_backup_count,
+		)
 	origins = settings.cors_allowed_origins if settings else DEFAULT_CORS_ORIGINS
 	application.add_middleware(
 		CORSMiddleware,

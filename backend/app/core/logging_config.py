@@ -9,6 +9,12 @@ from app.core.safe_logging import redact_text, redact_value
 LOGGER_NAME = "app"
 
 
+def _exception_type_name(record: logging.LogRecord) -> str:
+	if record.exc_info is None or record.exc_info[0] is None:
+		return "unknown"
+	return record.exc_info[0].__name__
+
+
 class JsonFormatter(logging.Formatter):
 	"""Formats application records as compact JSON for file ingestion."""
 
@@ -46,7 +52,7 @@ class JsonFormatter(logging.Formatter):
 			if value is not None:
 				payload[field] = redact_value(value, field)
 		if record.exc_info:
-			payload["exception_type"] = record.exc_info[0].__name__
+			payload["exception_type"] = _exception_type_name(record)
 		return json.dumps(payload, ensure_ascii=True, sort_keys=True)
 
 
@@ -59,7 +65,7 @@ class SafeConsoleFormatter(logging.Formatter):
 			f"{redact_text(record.getMessage())}"
 		)
 		if record.exc_info:
-			message += f" exception_type={record.exc_info[0].__name__}"
+			message += f" exception_type={_exception_type_name(record)}"
 		return message
 
 

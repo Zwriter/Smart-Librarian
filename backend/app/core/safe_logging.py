@@ -19,7 +19,7 @@ _SECRET_ASSIGNMENT = re.compile(
 
 
 def redact_value(value: Any, key: str | None = None) -> Any:
-	if key and any(secret in key.lower() for secret in _SECRET_KEYS):
+	if key and key.lower() in _SECRET_KEYS:
 		return "[REDACTED]"
 	if isinstance(value, Mapping):
 		return {

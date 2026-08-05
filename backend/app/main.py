@@ -52,6 +52,8 @@ def create_app(
 			settings.log_file_path,
 			settings.log_max_bytes,
 			settings.log_backup_count,
+			settings.log_console_enabled,
+			settings.log_file_enabled,
 		)
 	origins = settings.cors_allowed_origins if settings else DEFAULT_CORS_ORIGINS
 	application.add_middleware(

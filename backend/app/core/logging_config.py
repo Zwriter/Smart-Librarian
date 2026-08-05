@@ -74,25 +74,30 @@ def configure_logging(
 	log_file_path: Path,
 	log_max_bytes: int,
 	log_backup_count: int,
+	log_console_enabled: bool = True,
+	log_file_enabled: bool = True,
 	) -> logging.Logger:
 	"""Configure the application logger and return it."""
 	logger = logging.getLogger(LOGGER_NAME)
 	logger.setLevel(log_level.upper())
 	logger.propagate = False
-	log_file_path.parent.mkdir(parents=True, exist_ok=True)
+	if log_file_enabled:
+		log_file_path.parent.mkdir(parents=True, exist_ok=True)
 	for handler in list(logger.handlers):
 		handler.close()
 		logger.removeHandler(handler)
 
-	console_handler = logging.StreamHandler()
-	console_handler.setFormatter(SafeConsoleFormatter())
-	file_handler = RotatingFileHandler(
-		log_file_path,
-		maxBytes=log_max_bytes,
-		backupCount=log_backup_count,
-		encoding="utf-8",
-	)
-	file_handler.setFormatter(JsonFormatter())
-	logger.addHandler(console_handler)
-	logger.addHandler(file_handler)
+	if log_console_enabled:
+		console_handler = logging.StreamHandler()
+		console_handler.setFormatter(SafeConsoleFormatter())
+		logger.addHandler(console_handler)
+	if log_file_enabled:
+		file_handler = RotatingFileHandler(
+			log_file_path,
+			maxBytes=log_max_bytes,
+			backupCount=log_backup_count,
+			encoding="utf-8",
+		)
+		file_handler.setFormatter(JsonFormatter())
+		logger.addHandler(file_handler)
 	return logger

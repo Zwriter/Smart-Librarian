@@ -44,3 +44,19 @@ def test_console_formatter_excludes_exception_content() -> None:
 
 	assert "private summary" not in result
 	assert "exception_type=RuntimeError" in result
+
+
+def test_configure_logging_can_disable_each_destination(tmp_path: Path) -> None:
+	log_path = tmp_path / "logs" / "app.log"
+
+	logger = configure_logging(
+		"INFO",
+		log_path,
+		1_000,
+		1,
+		log_console_enabled=False,
+		log_file_enabled=False,
+	)
+
+	assert logger.handlers == []
+	assert not log_path.exists()

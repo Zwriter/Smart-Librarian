@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -29,9 +30,12 @@ class Settings(BaseSettings):
 	max_question_length: int = Field(default=2_000, gt=0)
 	max_history_messages: int = Field(default=20, gt=0)
 	log_level: str = Field(default="INFO", min_length=1)
+	log_console_enabled: bool = True
+	log_file_enabled: bool = True
 	log_file_path: Path = BACKEND_ROOT / "logs" / "app.log"
 	log_max_bytes: int = Field(default=10_000_000, gt=0)
 	log_backup_count: int = Field(default=5, ge=0)
+	log_privacy_mode: Literal["redact"] = "redact"
 	model_pricing: dict[str, dict[str, float]] = Field(default_factory=dict)
 
 	@field_validator(

@@ -18,7 +18,11 @@ class FakeChatClient:
 
 
 def test_openai_client_creates_embedding_with_configured_model() -> None:
-	response = SimpleNamespace(data=[SimpleNamespace(embedding=[0.1, 0.2])])
+	response = SimpleNamespace(
+		data=[SimpleNamespace(embedding=[0.1, 0.2])],
+		usage=SimpleNamespace(prompt_tokens=4, total_tokens=4),
+		id="embedding-1",
+	)
 	client = OpenAIClient(
 		api_key="test-key",
 		chat_model="chat-model",
@@ -26,7 +30,11 @@ def test_openai_client_creates_embedding_with_configured_model() -> None:
 		client=FakeEmbeddingClient(response),
 	)
 
-	assert client.create_embedding("find a mystery") == [0.1, 0.2]
+	result = client.create_embedding("find a mystery")
+
+	assert result.embedding == [0.1, 0.2]
+	assert result.usage is not None
+	assert result.usage.prompt_tokens == 4
 
 
 def test_openai_client_maps_chat_content_and_tool_calls() -> None:
@@ -42,7 +50,11 @@ def test_openai_client_maps_chat_content_and_tool_calls() -> None:
 			)
 		],
 	)
-	response = SimpleNamespace(choices=[SimpleNamespace(message=message)])
+	response = SimpleNamespace(
+		choices=[SimpleNamespace(message=message)],
+		usage=SimpleNamespace(prompt_tokens=8, completion_tokens=5, total_tokens=13),
+		id="chat-1",
+	)
 	client = OpenAIClient(
 		api_key="test-key",
 		chat_model="chat-model",
@@ -54,6 +66,20 @@ def test_openai_client_maps_chat_content_and_tool_calls() -> None:
 
 	assert result.content == "I recommend Frankenstein."
 	assert result.tool_calls[0].name == "get_summary_by_title"
+	assert result.usage is not None
+	assert result.usage.total_tokens == 13
+
+
+def test_openai_client_allows_missing_usage() -> None:
+	response = SimpleNamespace(data=[SimpleNamespace(embedding=[0.1])])
+	client = OpenAIClient(
+		api_key="test-key",
+		chat_model="chat-model",
+		embedding_model="embedding-model",
+		client=FakeEmbeddingClient(response),
+	)
+
+	assert client.create_embedding("query").usage is None
 
 
 def test_openai_client_wraps_provider_errors() -> None:

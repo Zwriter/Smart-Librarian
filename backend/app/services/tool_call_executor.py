@@ -1,11 +1,14 @@
 import json
+import logging
 from collections.abc import Callable
 from typing import Any
 
+from app.core.correlation import get_correlation_id
 from app.core.exceptions import ToolCallError
 from app.services.llm_client import ToolCall
 
 SUMMARY_TOOL_NAME = "get_summary_by_title"
+logger = logging.getLogger("app.ai")
 
 
 class ToolCallExecutor:
@@ -30,7 +33,38 @@ class ToolCallExecutor:
 		if set(arguments) != {"title"}:
 			raise ToolCallError("Tool arguments contain unknown fields")
 
-		return self._summary_lookup(title.strip())
+		logger.info(
+			"Tool call started",
+			extra={
+				"event": "tool_call_started",
+				"correlation_id": get_correlation_id(),
+				"operation": tool_call.name,
+				"tool_call_depth": call_depth,
+			},
+		)
+		try:
+			result = self._summary_lookup(title.strip())
+		except Exception:
+			logger.exception(
+				"Tool call failed",
+				extra={
+					"event": "tool_call_failed",
+					"correlation_id": get_correlation_id(),
+					"operation": tool_call.name,
+					"tool_call_depth": call_depth,
+				},
+			)
+			raise
+		logger.info(
+			"Tool call completed",
+			extra={
+				"event": "tool_call_completed",
+				"correlation_id": get_correlation_id(),
+				"operation": tool_call.name,
+				"tool_call_depth": call_depth,
+			},
+		)
+		return result
 
 	@staticmethod
 	def _parse_arguments(arguments: str) -> dict[str, Any]:

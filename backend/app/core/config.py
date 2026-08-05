@@ -32,6 +32,7 @@ class Settings(BaseSettings):
 	log_file_path: Path = BACKEND_ROOT / "logs" / "app.log"
 	log_max_bytes: int = Field(default=10_000_000, gt=0)
 	log_backup_count: int = Field(default=5, ge=0)
+	model_pricing: dict[str, dict[str, float]] = Field(default_factory=dict)
 
 	@field_validator(
 		"openai_chat_model",

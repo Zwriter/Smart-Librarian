@@ -27,6 +27,12 @@ from app.core.exceptions import (
 	ToolCallError,
 )
 from app.core.logging_config import configure_logging
+from app.services.usage_aggregation import (
+	DEFAULT_MODEL_PRICING,
+	UsageAggregator,
+	reset_usage_aggregator,
+	set_usage_aggregator,
+)
 
 DEFAULT_CORS_ORIGINS = ["http://localhost:5173", "http://localhost:3000"]
 logger = logging.getLogger("app.api")
@@ -60,6 +66,13 @@ def create_app(
 	async def request_lifecycle_logging(request: Request, call_next: Any) -> Any:
 		correlation_id = create_correlation_id(request.headers.get(CORRELATION_HEADER))
 		token = set_correlation_id(correlation_id)
+		pricing = (
+			settings.model_pricing
+			if settings and settings.model_pricing
+			else DEFAULT_MODEL_PRICING
+		)
+		aggregator = UsageAggregator(pricing)
+		usage_token = set_usage_aggregator(aggregator)
 		started_at = perf_counter()
 		logger.info(
 			"Request started",
@@ -99,6 +112,22 @@ def create_app(
 			)
 			raise
 		finally:
+			usage_summary = aggregator.summary()
+			logger.info(
+				"Request AI usage aggregated",
+				extra={
+					"event": "request_usage_aggregated",
+					"correlation_id": correlation_id,
+					"input_tokens": usage_summary.input_tokens,
+					"output_tokens": usage_summary.output_tokens,
+					"total_tokens": usage_summary.total_tokens,
+					"operation_count": usage_summary.operation_count,
+					"estimated_cost": usage_summary.estimated_cost,
+					"cost_available": usage_summary.cost_available,
+					"cost_unavailable_reason": usage_summary.cost_unavailable_reason,
+				},
+			)
+			reset_usage_aggregator(usage_token)
 			reset_correlation_id(token)
 
 	@application.exception_handler(InputValidationError)

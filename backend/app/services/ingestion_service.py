@@ -52,7 +52,7 @@ class IngestionService:
 			documents.append(self._document(book))
 			metadatas.append(self._metadata(book))
 			try:
-				embeddings.append(self._llm_client.create_embedding(documents[-1]))
+				embeddings.append(self._llm_client.create_embedding(documents[-1]).embedding)
 			except Exception as error:
 				raise LLMClientError("Unable to embed book data") from error
 

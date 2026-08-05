@@ -2,6 +2,7 @@ from typing import Any
 
 import pytest
 from app.core.exceptions import RetrievalError
+from app.services.llm_client import EmbeddingResult
 from app.services.retriever import Retriever
 
 
@@ -9,9 +10,9 @@ class FakeLLMClient:
 	def __init__(self) -> None:
 		self.queries: list[str] = []
 
-	def create_embedding(self, text: str) -> list[float]:
+	def create_embedding(self, text: str) -> EmbeddingResult:
 		self.queries.append(text)
-		return [0.1, 0.2]
+		return EmbeddingResult([0.1, 0.2])
 
 
 class FakeVectorStore:

@@ -27,7 +27,7 @@ class Retriever:
 	def retrieve(self, question: str) -> tuple[RetrievedBook, ...]:
 		try:
 			embedding = self._llm_client.create_embedding(question)
-			result = self._vector_store.query(embedding, self._top_k)
+			result = self._vector_store.query(embedding.embedding, self._top_k)
 			return self._map_results(result)
 		except RetrievalError:
 			raise

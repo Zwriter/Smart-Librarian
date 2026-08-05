@@ -2,11 +2,12 @@ from pathlib import Path
 
 from app.services.book_repository import BookRepository
 from app.services.ingestion_service import IngestionService
+from app.services.llm_client import EmbeddingResult
 
 
 class FakeLLM:
-	def create_embedding(self, text: str) -> list[float]:
-		return [float(len(text))]
+	def create_embedding(self, text: str) -> EmbeddingResult:
+		return EmbeddingResult([float(len(text))])
 
 
 class FakeStore:

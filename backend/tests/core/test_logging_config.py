@@ -23,6 +23,7 @@ def test_configure_logging_creates_console_and_rotating_file_handlers(tmp_path: 
 
 	logger.info("configured", extra={"event": "logging_configured"})
 
+	assert log_path.parent.is_dir()
 	assert log_path.is_file()
 	assert len(logger.handlers) == 2
 	assert {type(handler).__name__ for handler in logger.handlers} == {

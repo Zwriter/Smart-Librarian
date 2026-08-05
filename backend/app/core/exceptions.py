@@ -28,3 +28,7 @@ class ToolCallError(RuntimeError):
 
 class RetrievalError(RuntimeError):
 	"""Raised when vector retrieval fails or returns invalid data."""
+
+
+class ChatServiceError(RuntimeError):
+	"""Raised when recommendation orchestration cannot produce a response."""

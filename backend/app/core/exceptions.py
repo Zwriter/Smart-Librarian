@@ -16,3 +16,11 @@ class InputValidationError(ValueError):
 
 class InputRejectedError(ValueError):
 	"""Raised when user input matches a configured blocked rule."""
+
+
+class LLMClientError(RuntimeError):
+	"""Raised when an LLM provider request fails or returns an unusable response."""
+
+
+class ToolCallError(RuntimeError):
+	"""Raised when an LLM requests an unknown or invalid tool call."""

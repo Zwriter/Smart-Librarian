@@ -9,7 +9,7 @@ from app.core.exceptions import (
 )
 from app.services.input_filter import InputFilter
 
-PRODUCTION_FILTER_CONFIG_PATH = Path(__file__).parents[1] / "data" / "filter_config.json"
+PRODUCTION_FILTER_CONFIG_PATH = Path(__file__).parents[2] / "data" / "filter_config.json"
 
 
 def write_filter_config(path, config: object) -> None:

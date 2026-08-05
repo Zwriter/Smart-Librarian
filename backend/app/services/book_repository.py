@@ -22,13 +22,13 @@ class BookRepository:
 	def get_by_title(self, title: str) -> Book:
 		normalized_title = title.strip().casefold()
 		if not normalized_title:
-			raise BookNotFoundError("Book title cannot be empty")
+			raise BookNotFoundError("The book you are trying to access is not available.")
 
 		for book in self.list_books():
 			if book.title.casefold() == normalized_title:
 				return book
 
-		raise BookNotFoundError(f"Book not found: {title.strip()}")
+		raise BookNotFoundError("The book you are trying to access is not available.")
 
 	def get_summary_by_title(self, title: str) -> str:
 		return self.get_by_title(title).summary

@@ -1,5 +1,8 @@
+import logging
 from collections.abc import Callable
 from pathlib import Path
+from time import perf_counter
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +10,13 @@ from fastapi.responses import JSONResponse
 
 from app.api.routes.chat import router as chat_router
 from app.core.config import Settings, get_settings
+from app.core.correlation import (
+	CORRELATION_HEADER,
+	create_correlation_id,
+	get_correlation_id,
+	reset_correlation_id,
+	set_correlation_id,
+)
 from app.core.exceptions import (
 	BookNotFoundError,
 	ChatServiceError,
@@ -19,6 +29,7 @@ from app.core.exceptions import (
 from app.core.logging_config import configure_logging
 
 DEFAULT_CORS_ORIGINS = ["http://localhost:5173", "http://localhost:3000"]
+logger = logging.getLogger("app.api")
 
 
 def create_app(
@@ -45,10 +56,59 @@ def create_app(
 	)
 	application.include_router(chat_router)
 
+	@application.middleware("http")
+	async def request_lifecycle_logging(request: Request, call_next: Any) -> Any:
+		correlation_id = create_correlation_id(request.headers.get(CORRELATION_HEADER))
+		token = set_correlation_id(correlation_id)
+		started_at = perf_counter()
+		logger.info(
+			"Request started",
+			extra={
+				"event": "request_started",
+				"correlation_id": correlation_id,
+				"method": request.method,
+				"path": request.url.path,
+			},
+		)
+		try:
+			response = await call_next(request)
+			duration_ms = round((perf_counter() - started_at) * 1_000, 2)
+			logger.info(
+				"Request completed",
+				extra={
+					"event": "request_completed",
+					"correlation_id": correlation_id,
+					"method": request.method,
+					"path": request.url.path,
+					"status_code": response.status_code,
+					"duration_ms": duration_ms,
+				},
+			)
+			response.headers[CORRELATION_HEADER] = correlation_id
+			return response
+		except Exception:
+			logger.exception(
+				"Request failed",
+				extra={
+					"event": "request_failed",
+					"correlation_id": correlation_id,
+					"method": request.method,
+					"path": request.url.path,
+					"duration_ms": round((perf_counter() - started_at) * 1_000, 2),
+				},
+			)
+			raise
+		finally:
+			reset_correlation_id(token)
+
 	@application.exception_handler(InputValidationError)
 	async def handle_input_validation(
 		_request: Request, error: InputValidationError
 	) -> JSONResponse:
+		logger.warning(
+			"Request rejected",
+			extra={"event": "request_rejected", "correlation_id": get_correlation_id()},
+		)
 		return JSONResponse(status_code=400, content={"detail": str(error)})
 
 	@application.exception_handler(InputRejectedError)

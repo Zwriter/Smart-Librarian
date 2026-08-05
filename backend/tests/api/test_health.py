@@ -12,6 +12,17 @@ def test_health_endpoint() -> None:
 
 	assert response.status_code == 200
 	assert response.json() == {"status": "ok"}
+	assert response.headers["x-correlation-id"]
+
+
+def test_request_accepts_and_returns_valid_correlation_id() -> None:
+	client = TestClient(create_app())
+	correlation_id = "12345678-1234-5678-1234-567812345678"
+
+	response = client.get("/health", headers={"X-Correlation-ID": correlation_id})
+
+	assert response.status_code == 200
+	assert response.headers["x-correlation-id"] == correlation_id
 
 
 def test_readiness_endpoint() -> None:

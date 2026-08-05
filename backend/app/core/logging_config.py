@@ -4,6 +4,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any
 
+from app.core.safe_logging import redact_text, redact_value
+
 LOGGER_NAME = "app"
 
 
@@ -15,7 +17,7 @@ class JsonFormatter(logging.Formatter):
 			"timestamp": self.formatTime(record, "%Y-%m-%dT%H:%M:%S%z"),
 			"level": record.levelname,
 			"logger": record.name,
-			"message": record.getMessage(),
+			"message": redact_text(record.getMessage()),
 		}
 		for field in (
 			"event",
@@ -42,10 +44,23 @@ class JsonFormatter(logging.Formatter):
 		):
 			value = getattr(record, field, None)
 			if value is not None:
-				payload[field] = value
+				payload[field] = redact_value(value, field)
 		if record.exc_info:
-			payload["exception"] = self.formatException(record.exc_info)
+			payload["exception_type"] = record.exc_info[0].__name__
 		return json.dumps(payload, ensure_ascii=True, sort_keys=True)
+
+
+class SafeConsoleFormatter(logging.Formatter):
+	"""Formats console records without exposing exception bodies."""
+
+	def format(self, record: logging.LogRecord) -> str:
+		message = (
+			f"{self.formatTime(record)} {record.levelname} {record.name} "
+			f"{redact_text(record.getMessage())}"
+		)
+		if record.exc_info:
+			message += f" exception_type={record.exc_info[0].__name__}"
+		return message
 
 
 def configure_logging(
@@ -64,9 +79,7 @@ def configure_logging(
 		logger.removeHandler(handler)
 
 	console_handler = logging.StreamHandler()
-	console_handler.setFormatter(
-		logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
-	)
+	console_handler.setFormatter(SafeConsoleFormatter())
 	file_handler = RotatingFileHandler(
 		log_file_path,
 		maxBytes=log_max_bytes,

@@ -5,6 +5,7 @@ from typing import Any, Protocol
 
 from app.core.correlation import get_correlation_id
 from app.core.exceptions import LLMClientError
+from app.core.safe_logging import safe_log
 from app.services.usage_aggregation import record_usage
 from openai import OpenAI
 
@@ -134,7 +135,9 @@ class OpenAIClient:
 	def _log_usage(usage: TokenUsage | None) -> None:
 		if usage is None:
 			return
-		logging.getLogger("app.ai").info(
+		safe_log(
+			logging.getLogger("app.ai"),
+			logging.INFO,
 			"AI usage recorded",
 			extra={
 				"event": "ai_usage",

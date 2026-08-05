@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: smart-librarian-backend
+Version: 0.1.0
+Summary: FastAPI backend for semantic book recommendations
+Requires-Python: >=3.11

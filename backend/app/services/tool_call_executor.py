@@ -5,6 +5,7 @@ from typing import Any
 
 from app.core.correlation import get_correlation_id
 from app.core.exceptions import ToolCallError
+from app.core.safe_logging import safe_log
 from app.services.llm_client import ToolCall
 
 SUMMARY_TOOL_NAME = "get_summary_by_title"
@@ -33,7 +34,9 @@ class ToolCallExecutor:
 		if set(arguments) != {"title"}:
 			raise ToolCallError("Tool arguments contain unknown fields")
 
-		logger.info(
+		safe_log(
+			logger,
+			logging.INFO,
 			"Tool call started",
 			extra={
 				"event": "tool_call_started",
@@ -45,7 +48,9 @@ class ToolCallExecutor:
 		try:
 			result = self._summary_lookup(title.strip())
 		except Exception:
-			logger.exception(
+			safe_log(
+				logger,
+				logging.ERROR,
 				"Tool call failed",
 				extra={
 					"event": "tool_call_failed",
@@ -53,9 +58,12 @@ class ToolCallExecutor:
 					"operation": tool_call.name,
 					"tool_call_depth": call_depth,
 				},
+				exc_info=True,
 			)
 			raise
-		logger.info(
+		safe_log(
+			logger,
+			logging.INFO,
 			"Tool call completed",
 			extra={
 				"event": "tool_call_completed",

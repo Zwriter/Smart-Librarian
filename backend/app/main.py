@@ -27,6 +27,7 @@ from app.core.exceptions import (
 	ToolCallError,
 )
 from app.core.logging_config import configure_logging
+from app.core.safe_logging import safe_log
 from app.services.usage_aggregation import (
 	DEFAULT_MODEL_PRICING,
 	UsageAggregator,
@@ -74,7 +75,9 @@ def create_app(
 		aggregator = UsageAggregator(pricing)
 		usage_token = set_usage_aggregator(aggregator)
 		started_at = perf_counter()
-		logger.info(
+		safe_log(
+			logger,
+			logging.INFO,
 			"Request started",
 			extra={
 				"event": "request_started",
@@ -86,7 +89,9 @@ def create_app(
 		try:
 			response = await call_next(request)
 			duration_ms = round((perf_counter() - started_at) * 1_000, 2)
-			logger.info(
+			safe_log(
+				logger,
+				logging.INFO,
 				"Request completed",
 				extra={
 					"event": "request_completed",
@@ -100,7 +105,9 @@ def create_app(
 			response.headers[CORRELATION_HEADER] = correlation_id
 			return response
 		except Exception:
-			logger.exception(
+			safe_log(
+				logger,
+				logging.ERROR,
 				"Request failed",
 				extra={
 					"event": "request_failed",
@@ -109,11 +116,14 @@ def create_app(
 					"path": request.url.path,
 					"duration_ms": round((perf_counter() - started_at) * 1_000, 2),
 				},
+				exc_info=True,
 			)
 			raise
 		finally:
 			usage_summary = aggregator.summary()
-			logger.info(
+			safe_log(
+				logger,
+				logging.INFO,
 				"Request AI usage aggregated",
 				extra={
 					"event": "request_usage_aggregated",
@@ -134,7 +144,9 @@ def create_app(
 	async def handle_input_validation(
 		_request: Request, error: InputValidationError
 	) -> JSONResponse:
-		logger.warning(
+		safe_log(
+			logger,
+			logging.WARNING,
 			"Request rejected",
 			extra={"event": "request_rejected", "correlation_id": get_correlation_id()},
 		)

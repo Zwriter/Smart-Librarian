@@ -2,7 +2,7 @@ import json
 import logging
 from pathlib import Path
 
-from app.core.logging_config import JsonFormatter, configure_logging
+from app.core.logging_config import JsonFormatter, SafeConsoleFormatter, configure_logging
 
 
 def test_json_formatter_includes_structured_fields() -> None:
@@ -31,3 +31,16 @@ def test_configure_logging_creates_console_and_rotating_file_handlers(tmp_path: 
 		"RotatingFileHandler",
 	}
 	assert '"event": "logging_configured"' in log_path.read_text(encoding="utf-8")
+
+
+def test_console_formatter_excludes_exception_content() -> None:
+	try:
+		raise RuntimeError("private summary must not be displayed")
+	except RuntimeError:
+		record = logging.LogRecord("app", logging.ERROR, "", 0, "provider failed", (), None)
+		record.exc_info = __import__("sys").exc_info()
+
+	result = SafeConsoleFormatter().format(record)
+
+	assert "private summary" not in result
+	assert "exception_type=RuntimeError" in result

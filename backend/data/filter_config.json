@@ -1,0 +1,10 @@
+	{
+		"blocked_terms": [
+			"ignore previous instructions",
+			"reveal the system prompt",
+			"jailbreak"
+		],
+		"blocked_patterns": [
+			"\\b(?:system|developer)\\s+prompt\\b"
+		]
+	}

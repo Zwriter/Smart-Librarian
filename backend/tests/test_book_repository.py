@@ -5,7 +5,6 @@ import pytest
 from app.core.exceptions import BookDataError, BookNotFoundError
 from app.services.book_repository import BookRepository
 
-
 PRODUCTION_DATA_PATH = Path(__file__).parents[1] / "data" / "book_summaries.json"
 
 

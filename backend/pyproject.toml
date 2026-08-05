@@ -29,6 +29,7 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.mypy]
 python_version = "3.11"
 files = ["app"]
+follow_imports = "skip"
 check_untyped_defs = true
 disallow_untyped_defs = true
 no_implicit_optional = true

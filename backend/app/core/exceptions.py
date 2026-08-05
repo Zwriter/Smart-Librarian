@@ -24,3 +24,7 @@ class LLMClientError(RuntimeError):
 
 class ToolCallError(RuntimeError):
 	"""Raised when an LLM requests an unknown or invalid tool call."""
+
+
+class RetrievalError(RuntimeError):
+	"""Raised when vector retrieval fails or returns invalid data."""

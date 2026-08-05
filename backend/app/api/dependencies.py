@@ -1,12 +1,14 @@
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
+	from app.domain.chat_request import ChatRequest
+	from app.domain.chat_response import ChatResponse
 	from app.services.chat_service import ChatService
 
 
 @lru_cache(maxsize=1)
-def get_chat_service() -> "ChatService":
+def _build_chat_service() -> "ChatService":
 	from app.core.config import get_settings
 	from app.services.book_repository import BookRepository
 	from app.services.chat_service import ChatService
@@ -34,3 +36,15 @@ def get_chat_service() -> "ChatService":
 		llm_client=llm_client,
 		tool_executor=ToolCallExecutor(SummaryTool(book_repository).get_summary_by_title),
 	)
+
+
+class _LazyChatService:
+	"""Defers API-key and infrastructure loading until a valid chat request arrives."""
+
+	def recommend(self, request: "ChatRequest") -> "ChatResponse":
+		return _build_chat_service().recommend(request)
+
+
+@lru_cache(maxsize=1)
+def get_chat_service() -> "ChatService":
+	return cast("ChatService", _LazyChatService())

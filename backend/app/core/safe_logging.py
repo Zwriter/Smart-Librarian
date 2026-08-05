@@ -5,7 +5,6 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-
 _SECRET_KEYS = {
 	"api_key",
 	"authorization",
@@ -27,7 +26,7 @@ def redact_value(value: Any, key: str | None = None) -> Any:
 			str(item_key): redact_value(item_value, str(item_key))
 			for item_key, item_value in value.items()
 		}
-	if isinstance(value, (list, tuple)):
+	if isinstance(value, list | tuple):
 		return [redact_value(item) for item in value]
 	if isinstance(value, str):
 		return redact_text(value)

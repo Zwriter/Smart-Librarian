@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import App from '../App'
+import App from '../../App'
 import { createChatServer } from './appTestServer'
 
 const chatServer = createChatServer()

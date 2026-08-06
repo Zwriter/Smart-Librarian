@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
-import { BookSummary } from '../components/BookSummary'
-import { RecommendationCard } from '../components/RecommendationCard'
+import { BookSummary } from '../../components/BookSummary'
+import { RecommendationCard } from '../../components/RecommendationCard'
 
 test('renders long recommendation metadata without truncation', () => {
   render(

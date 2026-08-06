@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
-import { ApiError } from '../components/ApiError'
-import { ConversationList } from '../components/ConversationList'
-import { LoadingIndicator } from '../components/LoadingIndicator'
+import { ApiError } from '../../components/ApiError'
+import { ConversationList } from '../../components/ConversationList'
+import { LoadingIndicator } from '../../components/LoadingIndicator'
 
 test('announces active requests accessibly', () => {
   render(<LoadingIndicator />)

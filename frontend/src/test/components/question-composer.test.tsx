@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { QuestionComposer } from '../components/QuestionComposer'
+import { QuestionComposer } from '../../components/QuestionComposer'
 
 function renderComposer(overrides: Partial<Parameters<typeof QuestionComposer>[0]> = {}) {
   const props = {

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { ConversationList } from '../components/ConversationList'
-import { MessageBubble } from '../components/MessageBubble'
+import { ConversationList } from '../../components/ConversationList'
+import { MessageBubble } from '../../components/MessageBubble'
 
 function setScrollMetrics(element: HTMLElement, values: { scrollHeight: number; scrollTop: number; clientHeight: number }) {
   Object.defineProperties(element, {

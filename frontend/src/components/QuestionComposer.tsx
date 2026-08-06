@@ -52,7 +52,7 @@ export function QuestionComposer({
         <span id="question-count">{question.length.toLocaleString()} / 2,000</span>
         <button className="send-button" type="submit" disabled={isLoading || !question}>
           <span>{isLoading ? 'Searching' : 'Ask librarian'}</span>
-          <span className="send-icon" aria-hidden="true">→</span>
+          <span className="send-icon" aria-hidden="true">↗</span>
         </button>
       </div>
       {!error && <span className="sr-only" id="keyboard-hint">Press Enter to send. Press Shift and Enter for a new line.</span>}

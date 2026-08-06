@@ -1,0 +1,13 @@
+@media (max-width: 760px) {
+  .app-shell { width: min(100% - 32px, 560px); padding-top: 28px; }
+  .site-header { align-items: end; }
+  .library-layout { display: block; margin-top: 52px; }
+  .conversation-panel, .result-panel { padding: 28px 0 32px; }
+  .result-panel { border-top: 1px solid var(--line); border-left: 0; }
+  .conversation { min-height: 220px; }
+  .message { max-width: 92%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

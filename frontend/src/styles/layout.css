@@ -1,0 +1,23 @@
+.app-shell {
+  width: min(var(--reading-width), calc(100% - 48px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 42px 0 26px;
+  display: flex;
+  flex-direction: column;
+}
+
+.site-header, .section-heading, .composer-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.library-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr); gap: 0; margin-top: 72px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.conversation-panel, .result-panel { min-width: 0; padding: 34px 42px 42px 0; }
+.result-panel { padding: 34px 0 42px 42px; border-left: 1px solid var(--line); }
+.section-heading { align-items: end; margin-bottom: 34px; }
+.section-heading .eyebrow { margin-bottom: 12px; }
+.message-count { white-space: nowrap; }
+footer { margin-top: auto; padding-top: 24px; }

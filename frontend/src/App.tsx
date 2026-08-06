@@ -3,7 +3,6 @@ import { ConversationList } from './components/ConversationList'
 import { QuestionComposer } from './components/QuestionComposer'
 import { RecommendationCard } from './components/RecommendationCard'
 import { BookSummary } from './components/BookSummary'
-import './App.css'
 
 function App() {
   const chat = useChat()
@@ -16,6 +15,7 @@ function App() {
           <h1>Find your next <em>good</em> book.</h1>
         </div>
         <button className="text-button" type="button" onClick={chat.clearConversation} disabled={!chat.messages.length && !chat.response}>
+          <span className="action-icon" aria-hidden="true">×</span>{' '}
           Clear shelf
         </button>
       </header>

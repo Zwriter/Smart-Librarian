@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap');
+
+:root {
+  --ink: #28231f;
+  --ink-soft: #4f4740;
+  --muted: #786f66;
+  --paper: #eee7dc;
+  --canvas: #f8f5ef;
+  --surface: #fbf9f5;
+  --line: #d9d0c4;
+  --line-strong: #b8ab9c;
+  --accent: #b94c32;
+  --accent-dark: #8f3524;
+  --accent-soft: #ead8cc;
+  --error: #a6372d;
+  --success: #536b50;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius-sm: 2px;
+  --shadow-focus: 0 0 0 3px rgba(185, 76, 50, 0.2);
+  --shadow-lift: 0 8px 20px rgba(40, 35, 31, 0.1);
+  --reading-width: 1180px;
+}

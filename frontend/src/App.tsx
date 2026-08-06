@@ -26,7 +26,7 @@ function App() {
             <span className="message-count">{chat.messages.length} / 20 notes</span>
           </div>
 
-          <div className="conversation" aria-live="polite">
+          <section className="conversation" aria-label="Conversation history" aria-live="polite">
             {!chat.messages.length && !chat.isLoading && (
               <div className="empty-state">
                 <span className="book-mark" aria-hidden="true">✦</span>
@@ -41,9 +41,9 @@ function App() {
               </article>
             ))}
             {chat.isLoading && <div className="loading" role="status">Searching the stacks<span>...</span></div>}
-          </div>
+          </section>
 
-          <form className="composer" onSubmit={(event) => { event.preventDefault(); void chat.submitQuestion() }}>
+          <form className="composer" aria-label="Question composer" onSubmit={(event) => { event.preventDefault(); void chat.submitQuestion() }}>
             <label htmlFor="question">Your question</label>
             <textarea
               id="question"
@@ -76,16 +76,16 @@ function App() {
           <h2 id="result-heading">{chat.response ? 'A considered recommendation' : 'Your recommendation will appear here'}</h2>
           {chat.response ? (
             <>
-              <div className="recommendation">
+              <section className="recommendation" aria-labelledby="recommendation-title">
                 <p className="result-label">Recommended title</p>
-                <h3>{chat.response.recommendation.title}</h3>
+                <h3 id="recommendation-title">{chat.response.recommendation.title}</h3>
                 <p className="author">{chat.response.recommendation.author}</p>
                 <p className="rationale">{chat.response.recommendation.rationale}</p>
-              </div>
-              <div className="summary">
-                <p className="result-label">The long view</p>
+              </section>
+              <section className="summary" aria-labelledby="summary-title">
+                <p className="result-label" id="summary-title">The long view</p>
                 <p>{chat.response.summary}</p>
-              </div>
+              </section>
             </>
           ) : (
             <div className="result-placeholder"><span aria-hidden="true">“</span><p>The right book can change the shape of an evening.</p></div>

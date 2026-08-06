@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { sendChatRequest } from '../services/chatApi'
-import type { ChatResponse, ConversationMessage } from '../types/chat'
+import type { ChatResponse, ConversationMessage } from '../types/api'
+import type { ErrorState, RequestStatus } from '../types/ui'
 
 const MAX_HISTORY_MESSAGES = 20
 const MAX_QUESTION_LENGTH = 2_000
@@ -9,8 +10,8 @@ export function useChat() {
   const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [question, setQuestion] = useState('')
   const [response, setResponse] = useState<ChatResponse | null>(null)
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<ErrorState['error']>(null)
+  const [status, setStatus] = useState<RequestStatus>('idle')
 
   async function submitQuestion() {
     const trimmedQuestion = question.trim()
@@ -27,8 +28,8 @@ export function useChat() {
     const userMessage: ConversationMessage = { role: 'user', content: trimmedQuestion }
     setMessages((current) => [...current, userMessage].slice(-MAX_HISTORY_MESSAGES))
     setQuestion('')
-    setError('')
-    setIsLoading(true)
+    setError(null)
+    setStatus('loading')
 
     try {
       const result = await sendChatRequest({ question: trimmedQuestion, history })
@@ -37,10 +38,10 @@ export function useChat() {
         ...current,
         { role: 'assistant' as const, content: result.recommendation.rationale },
       ].slice(-MAX_HISTORY_MESSAGES))
+      setStatus('success')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Something went wrong. Please try again.')
-    } finally {
-      setIsLoading(false)
+      setStatus('error')
     }
   }
 
@@ -48,7 +49,8 @@ export function useChat() {
     setMessages([])
     setQuestion('')
     setResponse(null)
-    setError('')
+    setError(null)
+    setStatus('idle')
   }
 
   return {
@@ -56,7 +58,8 @@ export function useChat() {
     question,
     response,
     error,
-    isLoading,
+    isLoading: status === 'loading',
+    status,
     setQuestion,
     submitQuestion,
     clearConversation,

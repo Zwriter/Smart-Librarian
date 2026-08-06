@@ -38,4 +38,37 @@ describe('sendChatRequest', () => {
     await expect(sendChatRequest({ question: 'Noir', history: [] }))
       .rejects.toMatchObject({ message: 'Question was rejected.', status: 400 })
   })
+
+  it('joins validation details from the backend', async () => {
+    server.use(http.post('http://127.0.0.1:8000/chat', () => (
+      HttpResponse.json({ detail: [{ msg: 'Question is required.' }, { msg: 'History is invalid.' }] }, { status: 422 })
+    )))
+
+    await expect(sendChatRequest({ question: '', history: [] }))
+      .rejects.toMatchObject({ message: 'Question is required. History is invalid.', status: 422 })
+  })
+
+  it('uses a fallback for non-JSON backend errors', async () => {
+    server.use(http.post('http://127.0.0.1:8000/chat', () => (
+      new HttpResponse('Service unavailable', { status: 503 })
+    )))
+
+    await expect(sendChatRequest({ question: 'Noir', history: [] }))
+      .rejects.toMatchObject({
+        message: 'The librarian could not answer right now. Please try again.',
+        status: 503,
+      })
+  })
+
+  it('reports network failures without exposing request content', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('Network error'))
+
+    await expect(sendChatRequest({ question: 'Private question', history: [] }))
+      .rejects.toMatchObject({
+        message: 'The librarian is unavailable. Check that the backend is running.',
+      })
+
+    expect(fetchSpy).toHaveBeenCalledOnce()
+    fetchSpy.mockRestore()
+  })
 })

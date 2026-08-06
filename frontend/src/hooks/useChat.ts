@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { sendChatRequest } from '../services/chatApi'
 import type { ChatResponse, ConversationMessage } from '../types/api'
 import type { ErrorState, RequestStatus } from '../types/ui'
@@ -10,29 +10,35 @@ export function useChat() {
   const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [question, setQuestion] = useState('')
   const [response, setResponse] = useState<ChatResponse | null>(null)
-  const [error, setError] = useState<ErrorState['error']>(null)
+  const [validationError, setValidationError] = useState<ErrorState['error']>(null)
+  const [apiError, setApiError] = useState<ErrorState['error']>(null)
   const [status, setStatus] = useState<RequestStatus>('idle')
+  const [failedRequest, setFailedRequest] = useState<{ question: string; history: ConversationMessage[] } | null>(null)
+  const requestInFlight = useRef(false)
 
-  async function submitQuestion() {
-    const trimmedQuestion = question.trim()
-    if (!trimmedQuestion) {
-      setError('Ask a question before opening the catalogue.')
+  const error = validationError ?? apiError
+
+  async function executeRequest(
+    nextQuestion: string,
+    history: ConversationMessage[],
+    appendUserMessage: boolean,
+  ) {
+    if (requestInFlight.current) {
       return
     }
-    if (trimmedQuestion.length > MAX_QUESTION_LENGTH) {
-      setError('Questions must be 2,000 characters or fewer.')
-      return
-    }
 
-    const history = messages.slice(-(MAX_HISTORY_MESSAGES - 1))
-    const userMessage: ConversationMessage = { role: 'user', content: trimmedQuestion }
-    setMessages((current) => [...current, userMessage].slice(-MAX_HISTORY_MESSAGES))
+    requestInFlight.current = true
+    if (appendUserMessage) {
+      setMessages((current) => [...current, { role: 'user' as const, content: nextQuestion }].slice(-MAX_HISTORY_MESSAGES))
+    }
     setQuestion('')
-    setError(null)
+    setValidationError(null)
+    setApiError(null)
+    setFailedRequest(null)
     setStatus('loading')
 
     try {
-      const result = await sendChatRequest({ question: trimmedQuestion, history })
+      const result = await sendChatRequest({ question: nextQuestion, history })
       setResponse(result)
       setMessages((current) => [
         ...current,
@@ -40,8 +46,43 @@ export function useChat() {
       ].slice(-MAX_HISTORY_MESSAGES))
       setStatus('success')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Something went wrong. Please try again.')
+      const message = caught instanceof Error ? caught.message : 'Something went wrong. Please try again.'
+      setApiError(message)
+      setFailedRequest({ question: nextQuestion, history })
       setStatus('error')
+    } finally {
+      requestInFlight.current = false
+    }
+  }
+
+  async function submitQuestion() {
+    if (requestInFlight.current) {
+      return
+    }
+
+    const trimmedQuestion = question.trim()
+    if (!trimmedQuestion) {
+      setValidationError('Ask a question before opening the catalogue.')
+      setApiError(null)
+      setStatus('error')
+      return
+    }
+    if (trimmedQuestion.length > MAX_QUESTION_LENGTH) {
+      setValidationError('Questions must be 2,000 characters or fewer.')
+      setApiError(null)
+      setStatus('error')
+      return
+    }
+
+    const history = messages
+      .filter((message) => message.role === 'user' || message.role === 'assistant')
+      .slice(-(MAX_HISTORY_MESSAGES - 1))
+    await executeRequest(trimmedQuestion, history, true)
+  }
+
+  async function retry() {
+    if (failedRequest) {
+      await executeRequest(failedRequest.question, failedRequest.history, false)
     }
   }
 
@@ -49,7 +90,9 @@ export function useChat() {
     setMessages([])
     setQuestion('')
     setResponse(null)
-    setError(null)
+    setValidationError(null)
+    setApiError(null)
+    setFailedRequest(null)
     setStatus('idle')
   }
 
@@ -57,11 +100,14 @@ export function useChat() {
     messages,
     question,
     response,
+    validationError,
+    apiError,
     error,
     isLoading: status === 'loading',
     status,
     setQuestion,
     submitQuestion,
+    retry,
     clearConversation,
   }
 }

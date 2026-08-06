@@ -63,6 +63,11 @@ function App() {
               </button>
             </div>
             {chat.error && <p className="error" id="question-error" role="alert">{chat.error}</p>}
+            {chat.apiError && (
+              <button className="text-button" type="button" onClick={() => void chat.retry()} disabled={chat.isLoading}>
+                Retry request
+              </button>
+            )}
           </form>
         </section>
 

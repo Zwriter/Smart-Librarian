@@ -1,5 +1,5 @@
 __pycache__/
-/.backend-notes/
+/.notes/
 .env
 backend/.env
 secrets/

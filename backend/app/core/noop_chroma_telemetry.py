@@ -1,6 +1,6 @@
-from overrides import override
 from chromadb.config import System
 from chromadb.telemetry.product import ProductTelemetryClient, ProductTelemetryEvent
+from overrides import override
 
 
 class NoOpTelemetry(ProductTelemetryClient):

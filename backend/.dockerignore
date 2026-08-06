@@ -1,0 +1,21 @@
+# Never send credentials or local runtime state to the Docker builder.
+.env
+.env.*
+*.key
+*.pem
+secrets/
+
+# Local environments, generated state, and development artifacts.
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.chroma/
+logs/
+tests/
+smart_librarian_backend.egg-info/
+
+# Documentation is maintained in the repository and is not needed at runtime.
+README.md
+docs/

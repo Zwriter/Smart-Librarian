@@ -1,6 +1,11 @@
 __pycache__/
 /.backend-notes/
 .env
+backend/.env
+secrets/
+backend/secrets/
+*.key
+*.pem
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/

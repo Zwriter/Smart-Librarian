@@ -41,12 +41,27 @@ class ChatService:
 				messages,
 				tools=[GET_SUMMARY_TOOL],
 			)
-			if completion.content is None:
-				raise ChatServiceError("Recommendation provider returned no recommendation")
-			recommendation = self._parse_recommendation(completion.content)
 			if len(completion.tool_calls) != 1:
 				raise ChatServiceError("Recommendation provider must request one summary tool")
 			summary = self._tool_executor.execute(completion.tool_calls[0])
+			content = completion.content
+			if content is None:
+				follow_up = self._llm_client.create_chat_completion(
+					[
+						*messages,
+						{
+							"role": "system",
+							"content": (
+								"The summary lookup succeeded. Now return only one JSON object "
+								"with string fields title, author, and rationale."
+							),
+						},
+					],
+				)
+				content = follow_up.content
+			if content is None:
+				raise ChatServiceError("Recommendation provider returned no recommendation")
+			recommendation = self._parse_recommendation(content)
 			return ChatResponse(recommendation=recommendation, summary=summary)
 		except ChatServiceError:
 			raise

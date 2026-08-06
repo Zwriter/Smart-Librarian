@@ -99,6 +99,10 @@ class OpenAIClient:
 			}
 			if tools:
 				request["tools"] = list(tools)
+				request["tool_choice"] = {
+					"type": "function",
+					"function": {"name": "get_summary_by_title"},
+				}
 			response = self._client.chat.completions.create(**request)
 			message = response.choices[0].message
 			tool_calls = tuple(

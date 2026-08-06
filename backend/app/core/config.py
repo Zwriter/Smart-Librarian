@@ -40,6 +40,22 @@ class Settings(BaseSettings):
 	model_pricing: dict[str, dict[str, float]] = Field(default_factory=dict)
 
 	@field_validator(
+		"chroma_persist_directory",
+		"book_data_path",
+		"filter_config_path",
+		"log_file_path",
+		mode="before",
+	)
+	@classmethod
+	def resolve_paths(cls, value: Path) -> Path:
+		path = Path(value)
+		if path.is_absolute():
+			return path
+		parts = path.parts
+		base = BACKEND_ROOT.parent if parts and parts[0] == "backend" else BACKEND_ROOT
+		return base / path
+
+	@field_validator(
 		"openai_chat_model",
 		"openai_embedding_model",
 		"chroma_collection_name",

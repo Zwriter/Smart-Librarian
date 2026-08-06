@@ -26,7 +26,13 @@ def test_request_accepts_and_returns_valid_correlation_id() -> None:
 
 
 def test_readiness_endpoint() -> None:
-	client = TestClient(create_app())
+	settings = Settings(
+		_env_file=None,
+		openai_api_key="test-key",
+		book_data_path=Path("missing-books.json"),
+		filter_config_path=Path("missing-filter.json"),
+	)
+	client = TestClient(create_app(settings))
 
 	response = client.get("/ready")
 

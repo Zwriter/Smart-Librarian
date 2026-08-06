@@ -16,6 +16,8 @@ def test_prompt_contains_rules_history_context_and_question() -> None:
 
 	assert messages[0]["role"] == "system"
 	assert "get_summary_by_title" in messages[0]["content"]
+	assert "one JSON object" in messages[0]["content"]
+	assert "title, author, and rationale" in messages[0]["content"]
 	assert messages[1] == {"role": "user", "content": "I like science fiction."}
 	assert "Dune" in messages[2]["content"]
 	assert messages[-1] == {"role": "user", "content": "Recommend a book."}

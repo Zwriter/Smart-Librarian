@@ -7,8 +7,10 @@ from app.domain.retrieved_book import RetrievedBook
 RECOMMENDATION_SYSTEM_PROMPT = (
 	"You are a thoughtful book recommendation assistant. Recommend one book using "
 	"the retrieved catalogue context and the user's question. Do not invent book "
-	"details. Explain briefly why the recommendation fits. After choosing a book, "
-	"call get_summary_by_title to retrieve its complete local summary."
+	"details. Return the recommendation as one JSON object with exactly these "
+	"string fields: title, author, and rationale. Do not return markdown or prose "
+	"outside that JSON object. After choosing a book, call get_summary_by_title "
+	"to retrieve its complete local summary."
 )
 
 GET_SUMMARY_TOOL: dict[str, Any] = {

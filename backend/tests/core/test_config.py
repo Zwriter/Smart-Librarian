@@ -38,3 +38,15 @@ def test_settings_reject_privacy_mode_that_disables_redaction() -> None:
 def test_settings_reject_wildcard_cors_origin() -> None:
     with pytest.raises(ValidationError):
         Settings(_env_file=None, openai_api_key="test-key", cors_allowed_origins=["*"])
+
+
+def test_settings_resolve_repository_relative_paths() -> None:
+    settings = Settings(
+        _env_file=None,
+        openai_api_key="test-key",
+        book_data_path="backend/data/book_summaries.json",
+        filter_config_path="backend/data/filter_config.json",
+    )
+
+    assert settings.book_data_path.is_file()
+    assert settings.filter_config_path.is_file()

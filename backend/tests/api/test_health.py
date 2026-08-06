@@ -84,3 +84,14 @@ def test_cors_uses_explicit_default_origins() -> None:
 
 	assert loopback_response.status_code == 200
 	assert loopback_response.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
+
+	docker_response = client.options(
+		"/health",
+		headers={
+			"Origin": "http://localhost:8080",
+			"Access-Control-Request-Method": "GET",
+		},
+	)
+
+	assert docker_response.status_code == 200
+	assert docker_response.headers["access-control-allow-origin"] == "http://localhost:8080"

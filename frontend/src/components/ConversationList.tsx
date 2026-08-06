@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { ConversationMessage } from '../types/api'
+import { LoadingIndicator } from './LoadingIndicator'
 import { MessageBubble } from './MessageBubble'
 
 type ConversationListProps = {
@@ -53,7 +54,7 @@ export function ConversationList({ messages, isLoading = false }: ConversationLi
       {messages.map((message, index) => (
         <MessageBubble key={`${message.role}-${index}`} message={message} />
       ))}
-      {isLoading && <div className="loading" role="status">Searching the stacks<span>...</span></div>}
+      <div className="loading-slot">{isLoading && <LoadingIndicator />}</div>
     </div>
   )
 }

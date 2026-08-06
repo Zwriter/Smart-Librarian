@@ -1,5 +1,8 @@
 import { useChat } from './hooks/useChat'
 import { ConversationList } from './components/ConversationList'
+import { QuestionComposer } from './components/QuestionComposer'
+import { RecommendationCard } from './components/RecommendationCard'
+import { BookSummary } from './components/BookSummary'
 import './App.css'
 
 function App() {
@@ -29,32 +32,15 @@ function App() {
 
           <ConversationList messages={chat.messages} isLoading={chat.isLoading} />
 
-          <form className="composer" aria-label="Question composer" onSubmit={(event) => { event.preventDefault(); void chat.submitQuestion() }}>
-            <label htmlFor="question">Your question</label>
-            <textarea
-              id="question"
-              value={chat.question}
-              onChange={(event) => chat.setQuestion(event.target.value)}
-              placeholder="I want a novel that..."
-              maxLength={2000}
-              aria-describedby={chat.error ? 'question-error' : 'question-count'}
-              aria-invalid={Boolean(chat.error)}
-              disabled={chat.isLoading}
-              rows={3}
-            />
-            <div className="composer-footer">
-              <span id="question-count">{chat.question.length.toLocaleString()} / 2,000</span>
-              <button className="send-button" type="submit" disabled={chat.isLoading || !chat.question}>
-                {chat.isLoading ? 'Searching' : 'Ask librarian'} <span aria-hidden="true">→</span>
-              </button>
-            </div>
-            {chat.error && <p className="error" id="question-error" role="alert">{chat.error}</p>}
-            {chat.apiError && (
-              <button className="text-button" type="button" onClick={() => void chat.retry()} disabled={chat.isLoading}>
-                Retry request
-              </button>
-            )}
-          </form>
+          <QuestionComposer
+            question={chat.question}
+            error={chat.error}
+            apiError={chat.apiError}
+            isLoading={chat.isLoading}
+            onQuestionChange={chat.setQuestion}
+            onSubmit={() => void chat.submitQuestion()}
+            onRetry={() => void chat.retry()}
+          />
         </section>
 
         <aside className="result-panel" aria-labelledby="result-heading">
@@ -62,16 +48,8 @@ function App() {
           <h2 id="result-heading">{chat.response ? 'A considered recommendation' : 'Your recommendation will appear here'}</h2>
           {chat.response ? (
             <>
-              <section className="recommendation" aria-labelledby="recommendation-title">
-                <p className="result-label">Recommended title</p>
-                <h3 id="recommendation-title">{chat.response.recommendation.title}</h3>
-                <p className="author">{chat.response.recommendation.author}</p>
-                <p className="rationale">{chat.response.recommendation.rationale}</p>
-              </section>
-              <section className="summary" aria-labelledby="summary-title">
-                <p className="result-label" id="summary-title">The long view</p>
-                <p>{chat.response.summary}</p>
-              </section>
+              <RecommendationCard recommendation={chat.response.recommendation} />
+              <BookSummary summary={chat.response.summary} />
             </>
           ) : (
             <div className="result-placeholder"><span aria-hidden="true">“</span><p>The right book can change the shape of an evening.</p></div>

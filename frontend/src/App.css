@@ -51,6 +51,7 @@ h2 { margin-bottom: 0; font-size: clamp(1.5rem, 2.3vw, 2.1rem); line-height: 1.0
 .message.user { margin-left: auto; color: #fff; background: var(--ink); }
 .message.user .message-role { color: #d8cec0; }
 .message.assistant { border-left: 2px solid var(--accent); background: var(--paper); }
+.loading-slot { min-height: 48px; }
 .loading { padding: 14px 0; color: var(--accent); font: 500 0.8rem 'DM Mono', monospace; }
 .loading span { display: inline-block; width: 24px; overflow: hidden; animation: dots 1.1s steps(4, end) infinite; vertical-align: bottom; }
 .composer { padding-top: 28px; border-top: 1px solid var(--line); }
@@ -62,16 +63,19 @@ textarea:focus { border-bottom: 2px solid var(--accent); }
 .send-button { padding: 13px 17px; color: #fff; background: var(--accent); transition: background 0.2s, transform 0.2s; }
 .send-button:hover:not(:disabled) { background: #a03a25; transform: translateY(-1px); }
 .send-button:disabled { cursor: default; opacity: 0.45; }
-.send-button span { margin-left: 8px; font-size: 1.2rem; }
-.error { margin: 15px 0 0; color: var(--error); font-size: 0.85rem; }
+.send-icon { margin-left: 8px; font-size: 1.2rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.error, .api-error p { margin: 15px 0 0; color: var(--error); font-size: 0.85rem; }
+.api-error { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.api-error .text-button { flex: 0 0 auto; }
 .result-panel > h2 { max-width: 330px; margin-bottom: 38px; }
 .recommendation { padding: 26px 0 28px; border-top: 2px solid var(--accent); border-bottom: 1px solid var(--line); }
 .result-label { margin-bottom: 17px; }
 .recommendation h3 { margin-bottom: 5px; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.05; overflow-wrap: anywhere; }
 .author { margin-bottom: 25px; color: var(--accent); font-size: 0.9rem; }
-.rationale, .summary p:last-child { margin-bottom: 0; color: var(--ink); line-height: 1.7; overflow-wrap: anywhere; }
+.rationale, .summary > p:not(.result-label) { margin-bottom: 0; color: var(--ink); line-height: 1.7; overflow-wrap: anywhere; }
 .summary { padding-top: 28px; }
-.summary p:last-child { white-space: pre-wrap; }
+.summary > p:not(.result-label) { white-space: pre-wrap; }
 .result-placeholder { color: var(--muted); }
 .result-placeholder span { display: block; height: 64px; color: var(--accent); font: 5rem/1 'Fraunces', Georgia, serif; }
 .result-placeholder p { max-width: 270px; font: 1.25rem/1.35 'Fraunces', Georgia, serif; }

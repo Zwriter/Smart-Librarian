@@ -52,6 +52,7 @@ function App() {
               placeholder="I want a novel that..."
               maxLength={2000}
               aria-describedby={chat.error ? 'question-error' : 'question-count'}
+              aria-invalid={Boolean(chat.error)}
               disabled={chat.isLoading}
               rows={3}
             />

@@ -30,6 +30,43 @@ describe('sendChatRequest', () => {
     })
   })
 
+  it('serializes both user and assistant history roles', async () => {
+    let requestBody: unknown
+    server.use(http.post('http://127.0.0.1:8000/chat', async ({ request }) => {
+      requestBody = await request.json()
+      return HttpResponse.json({
+        recommendation: { title: 'Dune', author: 'Frank Herbert', rationale: 'A match.' },
+        summary: 'A complete summary.',
+      })
+    }))
+
+    await sendChatRequest({
+      question: 'Something more hopeful',
+      history: [
+        { role: 'user', content: 'I liked the mystery.' },
+        { role: 'assistant', content: 'Try a quieter investigation.' },
+      ],
+    })
+
+    expect(requestBody).toEqual({
+      question: 'Something more hopeful',
+      history: [
+        { role: 'user', content: 'I liked the mystery.' },
+        { role: 'assistant', content: 'Try a quieter investigation.' },
+      ],
+    })
+  })
+
+  it('parses a successful recommendation response', async () => {
+    const response = {
+      recommendation: { title: 'Dune', author: 'Frank Herbert', rationale: 'A match.' },
+      summary: 'A complete summary.',
+    }
+    server.use(http.post('http://127.0.0.1:8000/chat', () => HttpResponse.json(response)))
+
+    await expect(sendChatRequest({ question: 'Noir', history: [] })).resolves.toEqual(response)
+  })
+
   it('exposes backend detail errors without logging request content', async () => {
     server.use(http.post('http://127.0.0.1:8000/chat', () => (
       HttpResponse.json({ detail: 'Question was rejected.' }, { status: 400 })

@@ -3,6 +3,7 @@ from typing import Any
 
 import pytest
 from app.core.exceptions import RetrievalError
+from app.core.noop_chroma_telemetry import NoOpTelemetry
 from app.services.chroma_store import ChromaVectorStore
 
 
@@ -66,3 +67,7 @@ def test_chroma_store_upserts_records_and_reports_existing_ids() -> None:
 
 	assert existing == {"book-1"}
 	assert collection.upserted["ids"] == ["book-1", "book-2"]
+
+
+def test_noop_chroma_telemetry_does_not_capture_events() -> None:
+	assert NoOpTelemetry.capture is not None

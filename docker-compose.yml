@@ -6,6 +6,8 @@ services:
     env_file:
       - .env
     environment:
+      ANONYMIZED_TELEMETRY: "false"
+      CHROMA_PRODUCT_TELEMETRY_IMPL: app.core.noop_chroma_telemetry.NoOpTelemetry
       BOOK_DATA_PATH: /app/data/book_summaries.json
       CHROMA_PERSIST_DIRECTORY: /app/.chroma
       FILTER_CONFIG_PATH: /app/data/filter_config.json

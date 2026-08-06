@@ -76,6 +76,8 @@ The application loads `.env` from the repository root or from `backend/.env`. Th
 | `LOG_PRIVACY_MODE` | Logging privacy behavior | `redact` |
 | `MODEL_PRICING` | JSON pricing in USD per 1,000,000 tokens | Empty unless configured |
 
+Chroma anonymized telemetry is disabled in the application and Compose runtime with `ANONYMIZED_TELEMETRY=false`.
+
 Keep `CORS_ALLOWED_ORIGINS` explicit in production. Wildcard `*` is rejected by settings validation.
 
 ## API Key Security
@@ -169,3 +171,23 @@ Another API process is already using port `8000`. Stop it with `Ctrl+C`, or sele
 ### `/health` succeeds but `/ready` returns `503`
 
 Check `OPENAI_API_KEY`, the book and filter configuration paths, and Chroma initialization. The response intentionally hides internal details; inspect the application logs using the correlation ID.
+
+### Chroma telemetry override error during ingestion
+
+If ingestion fails with an error similar to:
+
+```text
+TypeError: Method capture overrides method from ProductTelemetryClient but does not have @override decorator
+```
+
+the custom telemetry implementation in `app/core/noop_chroma_telemetry.py` must decorate its `capture` method with `@override` from the `overrides` package. The current implementation already contains this decorator.
+
+After changing backend source files, rebuild the Docker image because the Compose service copies the source into the image rather than bind-mounting `backend/app`:
+
+```powershell
+docker compose build backend
+docker compose up -d backend
+docker compose exec backend python -m app.scripts.ingest_books
+```
+
+Successful repeat ingestion reports the number of added, failed, skipped, and updated books. Chroma telemetry remains disabled through `ANONYMIZED_TELEMETRY=false` and the no-op telemetry implementation configured in `docker-compose.yml`.

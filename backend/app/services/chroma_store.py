@@ -16,7 +16,13 @@ class ChromaVectorStore:
 		client: Any | None = None,
 	) -> None:
 		try:
-			self._client = client or chromadb.PersistentClient(path=str(persist_directory))
+			self._client = client or chromadb.PersistentClient(
+				path=str(persist_directory),
+				settings=chromadb.config.Settings(
+					anonymized_telemetry=False,
+					chroma_product_telemetry_impl="app.core.noop_chroma_telemetry.NoOpTelemetry",
+				),
+			)
 			self._collection = self._client.get_or_create_collection(name=collection_name)
 		except Exception as error:
 			raise RetrievalError("Unable to initialize vector store") from error

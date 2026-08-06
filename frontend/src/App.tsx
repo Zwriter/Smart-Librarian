@@ -44,6 +44,11 @@ function App() {
         </section>
 
         <aside className="result-panel" aria-labelledby="result-heading">
+          {chat.response && (
+            <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              Recommendation ready: {chat.response.recommendation.title}.
+            </p>
+          )}
           <p className="eyebrow">From the catalogue</p>
           <h2 id="result-heading">{chat.response ? 'A considered recommendation' : 'Your recommendation will appear here'}</h2>
           {chat.response ? (

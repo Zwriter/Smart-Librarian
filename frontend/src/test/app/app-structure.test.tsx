@@ -12,3 +12,4 @@ test('renders the primary librarian workflow and empty state', () => {
   expect(screen.getByText(/describe a mood/i)).toBeVisible()
   expect(screen.getByRole('complementary')).toHaveTextContent('Your recommendation will appear here')
 })
+

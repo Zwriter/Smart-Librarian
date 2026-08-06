@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QuestionComposer } from '../../components/QuestionComposer'
 
 function renderComposer(overrides: Partial<Parameters<typeof QuestionComposer>[0]> = {}) {
@@ -49,4 +50,17 @@ test('disables the textarea and all composer actions while loading', () => {
   expect(screen.getByRole('textbox', { name: 'Your question' })).toBeDisabled()
   expect(screen.getByRole('button', { name: 'Searching' })).toBeDisabled()
   expect(screen.getByRole('button', { name: 'Retry request' })).toBeDisabled()
+})
+
+test('supports keyboard-only focus and submission', async () => {
+  const user = userEvent.setup()
+  const { props } = renderComposer()
+
+  await user.tab()
+  expect(screen.getByRole('textbox', { name: 'Your question' })).toHaveFocus()
+  await user.tab()
+  expect(screen.getByRole('button', { name: 'Ask librarian' })).toHaveFocus()
+  await user.keyboard('{Enter}')
+
+  expect(props.onSubmit).toHaveBeenCalledOnce()
 })

@@ -1,4 +1,5 @@
 import { useChat } from './hooks/useChat'
+import { ConversationList } from './components/ConversationList'
 import './App.css'
 
 function App() {
@@ -26,22 +27,7 @@ function App() {
             <span className="message-count">{chat.messages.length} / 20 notes</span>
           </div>
 
-          <section className="conversation" aria-label="Conversation history" aria-live="polite">
-            {!chat.messages.length && !chat.isLoading && (
-              <div className="empty-state">
-                <span className="book-mark" aria-hidden="true">✦</span>
-                <p>Describe a mood, a genre, or the last story you could not put down.</p>
-                <span className="prompt-hint">Try “A mysterious story with an unforgettable setting.”</span>
-              </div>
-            )}
-            {chat.messages.map((message, index) => (
-              <article className={`message ${message.role}`} key={`${message.role}-${index}`}>
-                <span className="message-role">{message.role === 'user' ? 'You' : 'Librarian'}</span>
-                <p>{message.content}</p>
-              </article>
-            ))}
-            {chat.isLoading && <div className="loading" role="status">Searching the stacks<span>...</span></div>}
-          </section>
+          <ConversationList messages={chat.messages} isLoading={chat.isLoading} />
 
           <form className="composer" aria-label="Question composer" onSubmit={(event) => { event.preventDefault(); void chat.submitQuestion() }}>
             <label htmlFor="question">Your question</label>

@@ -40,13 +40,14 @@ h2 { margin-bottom: 0; font-size: clamp(1.5rem, 2.3vw, 2.1rem); line-height: 1.0
 .section-heading { align-items: end; margin-bottom: 34px; }
 .section-heading .eyebrow { margin-bottom: 12px; }
 .message-count { white-space: nowrap; }
-.conversation { min-height: 288px; }
+.conversation { min-height: 288px; max-height: 520px; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; }
 .empty-state { max-width: 410px; padding: 50px 0 30px; color: var(--ink); }
 .book-mark { display: block; margin-bottom: 18px; color: var(--accent); font-size: 2rem; }
 .empty-state p { margin-bottom: 18px; font: 500 1.35rem/1.3 'Fraunces', Georgia, serif; }
 .prompt-hint { color: var(--muted); font-size: 0.85rem; }
 .message { max-width: 82%; margin: 0 0 22px; padding: 16px 18px; animation: reveal 0.35s ease both; }
 .message p { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.message-role { display: block; }
 .message.user { margin-left: auto; color: #fff; background: var(--ink); }
 .message.user .message-role { color: #d8cec0; }
 .message.assistant { border-left: 2px solid var(--accent); background: var(--paper); }

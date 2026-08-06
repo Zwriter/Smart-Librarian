@@ -1,6 +1,7 @@
 .app-shell {
   width: min(var(--reading-width), calc(100% - 48px));
   min-height: 100vh;
+  min-height: 100svh;
   margin: 0 auto;
   padding: 42px 0 26px;
   display: flex;
@@ -21,3 +22,10 @@
 .section-heading .eyebrow { margin-bottom: 12px; }
 .message-count { white-space: nowrap; }
 footer { margin-top: auto; padding-top: 24px; }
+
+@media (max-width: 1024px) {
+  .app-shell { width: min(var(--reading-width), calc(100% - 40px)); }
+  .library-layout { grid-template-columns: minmax(0, 1fr) minmax(280px, 0.85fr); }
+  .conversation-panel { padding-right: 28px; }
+  .result-panel { padding-left: 28px; }
+}

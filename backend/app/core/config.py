@@ -24,7 +24,12 @@ class Settings(BaseSettings):
 	book_data_path: Path = BACKEND_ROOT / "data" / "book_summaries.json"
 	filter_config_path: Path = BACKEND_ROOT / "data" / "filter_config.json"
 	cors_allowed_origins: list[str] = Field(
-		default_factory=lambda: ["http://localhost:5173", "http://localhost:3000"]
+		default_factory=lambda: [
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
+		]
 	)
 	top_k_results: int = Field(default=5, gt=0, le=20)
 	max_question_length: int = Field(default=2_000, gt=0)

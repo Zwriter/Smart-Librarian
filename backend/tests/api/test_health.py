@@ -73,3 +73,14 @@ def test_cors_uses_explicit_default_origins() -> None:
 
 	assert response.status_code == 200
 	assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+	loopback_response = client.options(
+		"/health",
+		headers={
+			"Origin": "http://127.0.0.1:5173",
+			"Access-Control-Request-Method": "GET",
+		},
+	)
+
+	assert loopback_response.status_code == 200
+	assert loopback_response.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"

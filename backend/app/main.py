@@ -37,7 +37,12 @@ from app.services.usage_aggregation import (
 	set_usage_aggregator,
 )
 
-DEFAULT_CORS_ORIGINS = ["http://localhost:5173", "http://localhost:3000"]
+DEFAULT_CORS_ORIGINS = [
+	"http://localhost:5173",
+	"http://127.0.0.1:5173",
+	"http://localhost:3000",
+	"http://127.0.0.1:3000",
+]
 logger = logging.getLogger("app.api")
 
 

@@ -2,6 +2,7 @@ import pytest
 from app.core.exceptions import BookNotFoundError, ChatServiceError
 from app.domain.book import Book
 from app.domain.chat_request import ChatRequest
+from app.domain.conversation_message import ConversationMessage
 from app.domain.retrieved_book import RetrievedBook
 from app.services.chat_service import ChatService
 from app.services.llm_client import ChatCompletionResult, ToolCall
@@ -46,11 +47,183 @@ def test_chat_service_orchestrates_recommendation_and_summary() -> None:
 		FakeToolExecutor(),  # type: ignore[arg-type]
 	)
 
-	response = service.recommend(ChatRequest(question="Find a book"))
+	response = service.recommend(ChatRequest(question="Find Dune"))
 
 	assert response.recommendation.title == "Dune"
 	assert response.recommendation.author == "Frank Herbert"
 	assert response.summary == "Complete Dune summary."
+
+
+def test_chat_service_compacts_long_book_summaries_to_forty_words() -> None:
+	long_summary = " ".join(f"word{index}" for index in range(1, 46))
+
+	class LongSummaryToolExecutor:
+		def execute(self, tool_call: ToolCall) -> str:
+			return long_summary
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		FakeLLMClient(),  # type: ignore[arg-type]
+		LongSummaryToolExecutor(),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="Tell me more about Dune"))
+
+	assert response.summary == " ".join(f"word{index}" for index in range(1, 41))
+	assert len(response.summary.split()) == 40
+
+
+def test_chat_service_keeps_short_book_summaries_unchanged() -> None:
+	short_summary = "A classic horror story about creation and consequences."
+
+	class ShortSummaryToolExecutor:
+		def execute(self, tool_call: ToolCall) -> str:
+			return short_summary
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		FakeLLMClient(),  # type: ignore[arg-type]
+		ShortSummaryToolExecutor(),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="Tell me more about Dune"))
+
+	assert response.summary == short_summary
+
+
+def test_chat_service_returns_message_without_recommending_for_casual_questions() -> None:
+	class ConversationalLLMClient:
+		def create_chat_completion(self, messages, tools=()):
+			assert tools[0]["function"]["name"] == "get_summary_by_title"
+			return ChatCompletionResult(
+				content='{"message":"Hello. What kind of book are you looking for?"}',
+			)
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		ConversationalLLMClient(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="What is this?"))
+
+	assert response.recommendation is None
+	assert response.summary is None
+	assert response.message == "Hello. What kind of book are you looking for?"
+
+
+def test_chat_service_greeting_explains_librarian_capabilities() -> None:
+	class FailingRetriever:
+		def retrieve(self, question: str):
+			raise AssertionError("greetings should not reach retrieval")
+
+	service = ChatService(
+		FakeInputFilter(),
+		FailingRetriever(),  # type: ignore[arg-type]
+		FakeLLMClient(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="Hello"))
+
+	assert response.message is not None
+	assert "recommend books" in response.message
+	assert "summarize books" in response.message
+
+
+def test_chat_service_returns_three_options_for_ambiguous_requests() -> None:
+	class AmbiguousLLMClient:
+		def create_chat_completion(self, messages, tools=()):
+			assert tools == ()
+			return ChatCompletionResult(
+				content=(
+					'{"recommendations":['
+					'{"title":"Dune","author":"Frank Herbert",'
+					'"summary":"Politics, ecology, and prophecy on desert worlds."},'
+					'{"title":"Foundation","author":"Isaac Asimov",'
+					'"summary":"A mathematician predicts civilization collapse."},'
+					'{"title":"Solaris","author":"Stanislaw Lem",'
+					'"summary":"A mysterious planet challenges human understanding."}'
+					'],"message":"Would you like to know more about one specific book?"}'
+				)
+			)
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		AmbiguousLLMClient(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="I want something good"))
+
+	assert response.recommendations is not None
+	assert len(response.recommendations) == 3
+	assert response.message == "Would you like to know more about one specific book?"
+
+
+def test_chat_service_prefers_fresh_books_after_a_previous_recommendation() -> None:
+	class DiverseRetriever:
+		def retrieve(self, question: str) -> tuple[RetrievedBook, ...]:
+			return tuple(
+				RetrievedBook(
+					book=Book(title=title, author="Author", summary="Summary."),
+					document_id=title.casefold(),
+					relevance_score=1.0,
+				)
+				for title in ("Dune", "Foundation", "Solaris", "Frankenstein")
+			)
+
+	class AmbiguousLLMClient:
+		def create_chat_completion(self, messages, tools=()):
+			context = next(
+				message["content"]
+				for message in messages
+				if message["content"].startswith("Retrieved catalogue context:")
+			)
+			assert "Title: Dune" not in context
+			assert tools == ()
+			return ChatCompletionResult(
+				content=(
+					'{"recommendations":['
+					'{"title":"Foundation","author":"Author",'
+					'"summary":"A mathematician predicts civilization collapse."},'
+					'{"title":"Solaris","author":"Author",'
+					'"summary":"A mysterious planet challenges human understanding."},'
+					'{"title":"Frankenstein","author":"Author",'
+					'"summary":"Creation, ambition, and consequence shape this horror classic."}'
+					'],"message":"Would you like to know more about one specific book?"}'
+				)
+			)
+
+	service = ChatService(
+		FakeInputFilter(),
+		DiverseRetriever(),  # type: ignore[arg-type]
+		AmbiguousLLMClient(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(
+		ChatRequest(
+			question="I want something adventurous",
+			history=[
+				ConversationMessage(
+					role="assistant",
+					content="Dune: An epic story of politics and survival.",
+				)
+			],
+		)
+	)
+
+	assert response.recommendations is not None
+	assert {option.title for option in response.recommendations} == {
+		"Foundation",
+		"Solaris",
+		"Frankenstein",
+	}
 
 
 def test_chat_service_rejects_invalid_recommendation() -> None:
@@ -114,7 +287,7 @@ def test_chat_service_completes_recommendation_after_tool_only_response() -> Non
 	assert client.calls == 2
 
 
-def test_chat_service_corrects_unknown_summary_title() -> None:
+def test_chat_service_does_not_recommend_unknown_summary_title() -> None:
 	class RetrievedBookFakeRetriever:
 		def retrieve(self, question: str) -> tuple[RetrievedBook, ...]:
 			return (
@@ -170,4 +343,6 @@ def test_chat_service_corrects_unknown_summary_title() -> None:
 
 	response = service.recommend(ChatRequest(question="Find a book"))
 
-	assert response.recommendation.title == "Dune"
+	assert response.recommendation is None
+	assert response.summary is None
+	assert response.message == "I don't know that book from the local catalogue."

@@ -5,12 +5,27 @@ from app.domain.conversation_message import ConversationMessage
 from app.domain.retrieved_book import RetrievedBook
 
 RECOMMENDATION_SYSTEM_PROMPT = (
-	"You are a thoughtful book recommendation assistant. Recommend one book using "
-	"the retrieved catalogue context and the user's question. Do not invent book "
-	"details. Return the recommendation as one JSON object with exactly these "
-	"string fields: title, author, and rationale. Do not return markdown or prose "
-	"outside that JSON object. After choosing a book, call get_summary_by_title "
-	"to retrieve its complete local summary."
+	"You are a thoughtful librarian for a local book catalogue. Only recommend a "
+	"book when the user asks for a recommendation or asks about a book represented "
+	"in the retrieved catalogue context. For greetings, casual conversation, or "
+	"questions unrelated to recommendations, do not recommend a book; return one "
+	"JSON object with exactly this string field: message. If the user asks about a "
+	"specific book that is not in the retrieved context, do not substitute a similar "
+	"book; return a concise message saying you do not know that book. For broad or "
+	"ambiguous requests, return exactly three catalogue books in one JSON object "
+	"with fields recommendations and message. Each recommendation must contain "
+	"title, author, and a summary of exactly 5 to 10 words. The message must ask "
+	"whether the user wants to know more about a specific book. Do not call the "
+	"summary tool for this multi-book response. Never invent book details. For a "
+	"specific recommendation, return one JSON object with exactly these string "
+	"fields: title, author, and rationale, then call get_summary_by_title using the "
+	"exact catalogue title. Do not return markdown or prose outside JSON."
+)
+
+AMBIGUOUS_REQUEST_INSTRUCTION = (
+	"The user's request is intentionally broad. Return exactly three catalogue "
+	"recommendations with title, author, and 5 to 10 word summaries, plus a message "
+	"asking whether they want to know more about one specific book. Do not call tools."
 )
 
 GET_SUMMARY_TOOL: dict[str, Any] = {
@@ -37,6 +52,8 @@ def build_recommendation_messages(
 	question: str,
 	history: Sequence[ConversationMessage],
 	retrieved_books: Sequence[RetrievedBook],
+	ambiguous: bool = False,
+	previous_titles: set[str] | None = None,
 ) -> list[dict[str, str]]:
 	"""Build the complete provider-neutral message list for recommendations."""
 	context = "\n\n".join(
@@ -50,7 +67,7 @@ def build_recommendation_messages(
 		f"{context if context else 'No catalogue books were retrieved.'}"
 	)
 
-	return [
+	messages = [
 		{"role": "system", "content": RECOMMENDATION_SYSTEM_PROMPT},
 		*(
 			{"role": message.role, "content": message.content}
@@ -59,3 +76,12 @@ def build_recommendation_messages(
 		{"role": "system", "content": context_message},
 		{"role": "user", "content": question},
 	]
+	if ambiguous:
+		instruction = AMBIGUOUS_REQUEST_INSTRUCTION
+		if previous_titles:
+			instruction += (
+				" Avoid repeating any titles already recommended in the conversation "
+				"when at least three fresh catalogue choices are available."
+			)
+		messages.insert(-1, {"role": "system", "content": instruction})
+	return messages

@@ -71,3 +71,4 @@ def test_chroma_store_upserts_records_and_reports_existing_ids() -> None:
 
 def test_noop_chroma_telemetry_does_not_capture_events() -> None:
 	assert NoOpTelemetry.capture is not None
+	NoOpTelemetry.capture(None, None, None)  # type: ignore[arg-type]

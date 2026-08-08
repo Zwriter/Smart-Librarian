@@ -10,5 +10,5 @@ class NoOpTelemetry(ProductTelemetryClient):
 		super().__init__(system)
 
 	@override
-	def capture(self, event: ProductTelemetryEvent) -> None:
+	def capture(self, event: ProductTelemetryEvent, *args: object, **kwargs: object) -> None:
 		return

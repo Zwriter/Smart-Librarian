@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.routes.books import router as books_router
 from app.api.routes.chat import router as chat_router
 from app.core.config import Settings, get_settings
 from app.core.correlation import (
@@ -22,6 +23,7 @@ from app.core.exceptions import (
 	BookNotFoundError,
 	ChatServiceError,
 	FilterConfigurationError,
+	GoogleBooksError,
 	InputRejectedError,
 	InputValidationError,
 	LLMClientError,
@@ -73,6 +75,7 @@ def create_app(
 		allow_headers=["*"],
 	)
 	application.include_router(chat_router)
+	application.include_router(books_router)
 
 	@application.middleware("http")
 	async def request_lifecycle_logging(request: Request, call_next: Any) -> Any:
@@ -196,6 +199,7 @@ def create_app(
 	application.add_exception_handler(RetrievalError, handle_service_failure)
 	application.add_exception_handler(ToolCallError, handle_service_failure)
 	application.add_exception_handler(ChatServiceError, handle_service_failure)
+	application.add_exception_handler(GoogleBooksError, handle_service_failure)
 	application.add_exception_handler(BookDataError, handle_service_failure)
 	application.add_exception_handler(FilterConfigurationError, handle_service_failure)
 

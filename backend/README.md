@@ -62,6 +62,11 @@ The application loads `.env` from the repository root or from `backend/.env`. Th
 | `OPENAI_API_KEY` | Provider credential required for chat and ingestion | Required |
 | `OPENAI_CHAT_MODEL` | Chat completion model | `gpt-4o-mini` |
 | `OPENAI_EMBEDDING_MODEL` | Embedding model | `text-embedding-3-small` |
+| `GOOGLE_BOOKS_API_KEY` | Google Books API credential; recommended to avoid unauthenticated quota limits | Optional |
+| `GOOGLE_BOOKS_BASE_URL` | Google Books API base URL | `https://www.googleapis.com/books/v1` |
+| `GOOGLE_BOOKS_TIMEOUT_SECONDS` | Google Books request timeout | `10` |
+| `GOOGLE_BOOKS_MAX_RESULTS` | Maximum Google Books results per request | `10` |
+| `GOOGLE_BOOKS_CACHE_PATH` | SQLite cache for public Google Books searches | `backend/.google_books_cache.sqlite3` locally |
 | `CHROMA_PERSIST_DIRECTORY` | Persistent vector-store directory | `backend/.chroma` locally |
 | `BOOK_DATA_PATH` | Book catalogue JSON file | `backend/data/book_summaries.json` locally |
 | `FILTER_CONFIG_PATH` | Input-filter JSON file | `backend/data/filter_config.json` locally |
@@ -149,6 +154,7 @@ The Docker image uses `/app/data`, `/app/.chroma`, and `/app/logs` internally. C
 - `GET /health`: liveness check; does not require an API key.
 - `GET /ready`: readiness check for configuration, local data, and Chroma.
 - `POST /chat`: validates a question and optional history, retrieves book context, calls the recommendation service, and returns a recommendation with the complete local summary.
+- `GET /books/search`: searches the local Google Books cache and falls back to the Google Books API.
 
 All responses include `X-Correlation-ID`. See [REST API contracts](docs/api.md) for request, response, validation, error, and CORS details.
 

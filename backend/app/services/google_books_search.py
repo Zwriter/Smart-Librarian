@@ -1,0 +1,22 @@
+from typing import cast
+
+from app.domain.google_book import GoogleBook
+from app.services.google_books_client import GoogleBooksClient
+from app.services.google_books_repository import GoogleBooksRepository
+
+
+class GoogleBooksSearchService:
+	"""Searches the cache first and stores provider results for later requests."""
+
+	def __init__(self, client: GoogleBooksClient, repository: GoogleBooksRepository) -> None:
+		self._client = client
+		self._repository = repository
+
+	def search(self, query: str, limit: int) -> tuple[GoogleBook, ...]:
+		cached_books = self._repository.get(query)
+		if cached_books is not None:
+			return cast(tuple[GoogleBook, ...], cached_books[:limit])
+
+		books = self._client.search_volumes(query, limit)
+		self._repository.save(query, books)
+		return cast(tuple[GoogleBook, ...], books)

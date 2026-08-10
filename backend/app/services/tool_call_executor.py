@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import Any
 
 from app.core.correlation import get_correlation_id
-from app.core.exceptions import ToolCallError
+from app.core.exceptions import BookNotFoundError, ToolCallError
 from app.core.safe_logging import safe_log
 from app.services.llm_client import ToolCall
 
@@ -47,6 +47,19 @@ class ToolCallExecutor:
 		)
 		try:
 			result = self._summary_lookup(title.strip())
+		except BookNotFoundError:
+			safe_log(
+				logger,
+				logging.WARNING,
+				"Tool call found no matching catalogue book",
+				extra={
+					"event": "tool_call_book_not_found",
+					"correlation_id": get_correlation_id(),
+					"operation": tool_call.name,
+					"tool_call_depth": call_depth,
+				},
+			)
+			raise
 		except Exception:
 			safe_log(
 				logger,

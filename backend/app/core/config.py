@@ -20,6 +20,14 @@ class Settings(BaseSettings):
 	openai_chat_model: str = Field(default="gpt-4o-mini", min_length=1)
 	openai_validation_model: str = Field(default="gpt-4o-mini", min_length=1)
 	openai_embedding_model: str = Field(default="text-embedding-3-small", min_length=1)
+	google_books_api_key: SecretStr | None = None
+	google_books_base_url: str = Field(
+		default="https://www.googleapis.com/books/v1",
+		min_length=1,
+	)
+	google_books_timeout_seconds: float = Field(default=10.0, gt=0)
+	google_books_max_results: int = Field(default=10, gt=0, le=40)
+	google_books_cache_path: Path = BACKEND_ROOT / ".google_books_cache.sqlite3"
 	chroma_persist_directory: Path = BACKEND_ROOT / ".chroma"
 	chroma_collection_name: str = Field(default="books", min_length=1)
 	book_data_path: Path = BACKEND_ROOT / "data" / "book_summaries.json"
@@ -49,6 +57,7 @@ class Settings(BaseSettings):
 		"chroma_persist_directory",
 		"book_data_path",
 		"filter_config_path",
+		"google_books_cache_path",
 		"log_file_path",
 		mode="before",
 	)
@@ -65,6 +74,7 @@ class Settings(BaseSettings):
 		"openai_chat_model",
 		"openai_validation_model",
 		"openai_embedding_model",
+		"google_books_base_url",
 		"chroma_collection_name",
 		mode="before",
 	)

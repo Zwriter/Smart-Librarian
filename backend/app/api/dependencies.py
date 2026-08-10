@@ -5,6 +5,9 @@ if TYPE_CHECKING:
 	from app.domain.chat_request import ChatRequest
 	from app.domain.chat_response import ChatResponse
 	from app.services.chat_service import ChatService
+	from app.services.google_books_client import GoogleBooksApiClient
+	from app.services.google_books_repository import SQLiteGoogleBooksRepository
+	from app.services.google_books_search import GoogleBooksSearchService
 
 
 @lru_cache(maxsize=1)
@@ -57,3 +60,40 @@ class _LazyChatService:
 @lru_cache(maxsize=1)
 def get_chat_service() -> "ChatService":
 	return cast("ChatService", _LazyChatService())
+
+
+@lru_cache(maxsize=1)
+def get_google_books_client() -> "GoogleBooksApiClient":
+	from app.core.config import get_settings
+	from app.services.google_books_client import GoogleBooksApiClient
+
+	settings = get_settings()
+	api_key = (
+		settings.google_books_api_key.get_secret_value()
+		if settings.google_books_api_key is not None
+		else None
+	)
+	return GoogleBooksApiClient(
+		base_url=settings.google_books_base_url,
+		timeout_seconds=settings.google_books_timeout_seconds,
+		max_results=settings.google_books_max_results,
+		api_key=api_key,
+	)
+
+
+@lru_cache(maxsize=1)
+def get_google_books_repository() -> "SQLiteGoogleBooksRepository":
+	from app.core.config import get_settings
+	from app.services.google_books_repository import SQLiteGoogleBooksRepository
+
+	return SQLiteGoogleBooksRepository(get_settings().google_books_cache_path)
+
+
+@lru_cache(maxsize=1)
+def get_google_books_search_service() -> "GoogleBooksSearchService":
+	from app.services.google_books_search import GoogleBooksSearchService
+
+	return GoogleBooksSearchService(
+		client=get_google_books_client(),
+		repository=get_google_books_repository(),
+	)

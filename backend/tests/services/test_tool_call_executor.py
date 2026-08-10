@@ -1,5 +1,6 @@
 import pytest
-from app.core.exceptions import ToolCallError
+from app.core.exceptions import BookNotFoundError, ToolCallError
+from app.services import tool_call_executor
 from app.services.llm_client import ToolCall
 from app.services.tool_call_executor import ToolCallExecutor
 
@@ -60,3 +61,19 @@ def test_executor_rejects_tool_call_loop() -> None:
 
 	with pytest.raises(ToolCallError, match="depth limit"):
 		executor.execute(tool_call, call_depth=1)
+
+
+def test_executor_logs_missing_book_without_traceback(monkeypatch) -> None:
+	logs = []
+	monkeypatch.setattr(tool_call_executor, "safe_log", lambda *args, **kwargs: logs.append(kwargs))
+
+	def lookup(_title: str) -> str:
+		raise BookNotFoundError("not found")
+
+	executor = ToolCallExecutor(lookup)
+	tool_call = ToolCall(id="call-1", name="get_summary_by_title", arguments='{"title":"Dune"}')
+
+	with pytest.raises(BookNotFoundError):
+		executor.execute(tool_call)
+
+	assert not logs[0].get("exc_info", False)

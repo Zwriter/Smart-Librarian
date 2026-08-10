@@ -38,5 +38,9 @@ class RetrievalError(RuntimeError):
 	"""Raised when vector retrieval fails or returns invalid data."""
 
 
+class GoogleBooksError(RuntimeError):
+	"""Raised when the Google Books provider cannot return valid data."""
+
+
 class ChatServiceError(RuntimeError):
 	"""Raised when recommendation orchestration cannot produce a response."""

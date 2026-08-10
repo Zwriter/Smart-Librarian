@@ -2,6 +2,7 @@ import { useChat } from './hooks/useChat'
 import { ConversationList } from './components/ConversationList'
 import { QuestionComposer } from './components/QuestionComposer'
 import { RecommendationCard } from './components/RecommendationCard'
+import { RecommendationOptions } from './components/RecommendationOptions'
 import { BookSummary } from './components/BookSummary'
 
 function App() {
@@ -46,12 +47,17 @@ function App() {
         <aside className="result-panel" aria-labelledby="result-heading">
           {chat.response && (
             <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-              Recommendation ready: {chat.response.recommendation.title}.
+              {chat.response.message ?? `Recommendation ready: ${chat.response.recommendation?.title}.`}
             </p>
           )}
           <p className="eyebrow">From the catalogue</p>
-          <h2 id="result-heading">{chat.response ? 'A considered recommendation' : 'Your recommendation will appear here'}</h2>
-          {chat.response ? (
+          <h2 id="result-heading">{chat.response?.recommendations ? 'A few paths from the catalogue' : chat.response?.message ? 'A note from the librarian' : chat.response ? 'A considered recommendation' : 'Your recommendation will appear here'}</h2>
+          {chat.response?.message ? (
+            <>
+              {chat.response.recommendations && <RecommendationOptions recommendations={chat.response.recommendations} />}
+              <div className="result-placeholder"><p>{chat.response.message}</p></div>
+            </>
+          ) : chat.response?.recommendation && chat.response.summary ? (
             <>
               <RecommendationCard recommendation={chat.response.recommendation} />
               <BookSummary summary={chat.response.summary} />

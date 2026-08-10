@@ -15,6 +15,7 @@ include = ["app*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+cache_dir = ".cache/.pytest_cache"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
@@ -22,12 +23,14 @@ asyncio_default_fixture_loop_scope = "function"
 target-version = "py311"
 line-length = 100
 src = ["app", "tests"]
+cache-dir = ".cache/.ruff_cache"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
 [tool.mypy]
 python_version = "3.11"
+cache_dir = ".cache/.mypy_cache"
 files = ["app"]
 follow_imports = "skip"
 check_untyped_defs = true

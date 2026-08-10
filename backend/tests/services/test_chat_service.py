@@ -2,7 +2,9 @@ import pytest
 from app.core.exceptions import BookNotFoundError, ChatServiceError
 from app.domain.book import Book
 from app.domain.chat_request import ChatRequest
+from app.domain.conversation_intent import ConversationIntent
 from app.domain.conversation_message import ConversationMessage
+from app.domain.input_safety import InputSafetyResult
 from app.domain.retrieved_book import RetrievedBook
 from app.services.chat_service import ChatService
 from app.services.llm_client import ChatCompletionResult, ToolCall
@@ -37,6 +39,26 @@ class FakeLLMClient:
 class FakeToolExecutor:
 	def execute(self, tool_call: ToolCall) -> str:
 		return "Complete Dune summary."
+
+
+class FakeIntentClassifier:
+	def __init__(self, intent: str) -> None:
+		self.intent = intent
+
+	def classify(self, question, history=()):
+		return ConversationIntent(
+			intent=self.intent,
+			requires_retrieval=self.intent == "recommendation",
+			requires_summary_tool=self.intent == "book_summary",
+		)
+
+
+class FakeInputSafetyValidator:
+	def __init__(self, result: InputSafetyResult) -> None:
+		self.result = result
+
+	def validate(self, question, history=()):
+		return self.result
 
 
 def test_chat_service_orchestrates_recommendation_and_summary() -> None:
@@ -125,6 +147,7 @@ def test_chat_service_greeting_explains_librarian_capabilities() -> None:
 		FailingRetriever(),  # type: ignore[arg-type]
 		FakeLLMClient(),  # type: ignore[arg-type]
 		FakeToolExecutor(),  # type: ignore[arg-type]
+		FakeIntentClassifier("greeting"),  # type: ignore[arg-type]
 	)
 
 	response = service.recommend(ChatRequest(question="Hello"))
@@ -132,6 +155,68 @@ def test_chat_service_greeting_explains_librarian_capabilities() -> None:
 	assert response.message is not None
 	assert "recommend books" in response.message
 	assert "summarize books" in response.message
+
+
+def test_chat_service_uses_model_intent_for_conversation() -> None:
+	class FailingRetriever:
+		def retrieve(self, question: str):
+			raise AssertionError("conversation should not reach retrieval")
+
+	service = ChatService(
+		FakeInputFilter(),
+		FailingRetriever(),  # type: ignore[arg-type]
+		FakeLLMClient(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+		FakeIntentClassifier("capabilities"),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="wht cn u do?"))
+
+	assert response.message == ChatService.CAPABILITIES_MESSAGE
+
+
+def test_chat_service_rejects_obscene_content_before_intent_classification() -> None:
+	class FailingIntentClassifier:
+		def classify(self, question, history=()):
+			raise AssertionError("unsafe input should not reach intent classification")
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		FakeLLMClient(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+		FailingIntentClassifier(),  # type: ignore[arg-type]
+		FakeInputSafetyValidator(
+			InputSafetyResult(
+				allowed=False,
+				category="obscene",
+				reason="Obscene content.",
+			)
+		),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="obscene input"))
+
+	assert response.message == ChatService.SAFETY_REJECTION_MESSAGE
+
+
+@pytest.mark.parametrize("question", ["Heyy", "What can you do?"])
+def test_chat_service_handles_conversation_without_book_or_llm_calls(question: str) -> None:
+	class FailingDependency:
+		def __getattr__(self, name: str):
+			raise AssertionError(f"conversation should not call {name}")
+
+	service = ChatService(
+		FakeInputFilter(),
+		FailingDependency(),  # type: ignore[arg-type]
+		FailingDependency(),  # type: ignore[arg-type]
+		FailingDependency(),  # type: ignore[arg-type]
+		FakeIntentClassifier("greeting" if question == "Heyy" else "capabilities"),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question=question))
+
+	assert response.message == ChatService.CAPABILITIES_MESSAGE
 
 
 def test_chat_service_returns_three_options_for_ambiguous_requests() -> None:

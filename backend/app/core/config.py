@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
 	openai_api_key: SecretStr = Field(min_length=1)
 	openai_chat_model: str = Field(default="gpt-4o-mini", min_length=1)
+	openai_validation_model: str = Field(default="gpt-4o-mini", min_length=1)
 	openai_embedding_model: str = Field(default="text-embedding-3-small", min_length=1)
 	chroma_persist_directory: Path = BACKEND_ROOT / ".chroma"
 	chroma_collection_name: str = Field(default="books", min_length=1)
@@ -62,6 +63,7 @@ class Settings(BaseSettings):
 
 	@field_validator(
 		"openai_chat_model",
+		"openai_validation_model",
 		"openai_embedding_model",
 		"chroma_collection_name",
 		mode="before",

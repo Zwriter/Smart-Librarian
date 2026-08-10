@@ -1,5 +1,5 @@
 __pycache__/
-/.notes/
+/.vscode/
 .env
 backend/.env
 secrets/
@@ -9,6 +9,7 @@ backend/secrets/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.cache/
 .venv/
 backend/.chroma/
 backend/logs/

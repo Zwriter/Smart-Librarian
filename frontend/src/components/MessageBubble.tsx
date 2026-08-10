@@ -10,7 +10,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   return (
     <article className={`message ${message.role}`} aria-label={`${speaker} message`}>
       <span className="message-role">{speaker}</span>
-      <p>{message.content}</p>
+      <p className="message-content">{message.content}</p>
     </article>
   )
 }

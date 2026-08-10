@@ -42,7 +42,14 @@ export function useChat() {
       setResponse(result)
       setMessages((current) => [
         ...current,
-        { role: 'assistant' as const, content: result.recommendation.rationale },
+        {
+          role: 'assistant' as const,
+          content: result.message
+            ? result.recommendations
+              ? `${result.recommendations.map((option) => `- ${option.title}`).join('\n')}\n${result.message}`
+              : result.message
+            : `${result.recommendation?.title}: ${result.recommendation?.rationale}`,
+        },
       ].slice(-MAX_HISTORY_MESSAGES))
       setStatus('success')
     } catch (caught) {

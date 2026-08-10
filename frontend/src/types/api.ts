@@ -16,7 +16,15 @@ export type Recommendation = {
   rationale: string
 }
 
-export type ChatResponse = {
-  recommendation: Recommendation
+export type RecommendationOption = {
+  title: string
+  author: string
   summary: string
+}
+
+export type ChatResponse = {
+  recommendation: Recommendation | null
+  recommendations?: RecommendationOption[] | null
+  summary: string | null
+  message?: string | null
 }

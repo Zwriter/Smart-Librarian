@@ -18,6 +18,14 @@ class InputRejectedError(ValueError):
 	"""Raised when user input matches a configured blocked rule."""
 
 
+class InputSafetyError(RuntimeError):
+	"""Raised when the model-based safety validator cannot return a valid result."""
+
+
+class IntentClassificationError(RuntimeError):
+	"""Raised when the intent classifier cannot return a valid classification."""
+
+
 class LLMClientError(RuntimeError):
 	"""Raised when an LLM provider request fails or returns an unusable response."""
 

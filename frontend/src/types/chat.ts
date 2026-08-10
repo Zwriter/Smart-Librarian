@@ -4,4 +4,5 @@ export type {
   ConversationMessage,
   ConversationRole,
   Recommendation,
+  RecommendationOption,
 } from './api'

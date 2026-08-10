@@ -3,13 +3,20 @@ import re
 from collections.abc import Sequence
 from typing import Any, cast
 
-from app.core.exceptions import BookNotFoundError, ChatServiceError
+from app.core.exceptions import (
+	BookNotFoundError,
+	ChatServiceError,
+	InputSafetyError,
+	IntentClassificationError,
+)
 from app.domain.chat_request import ChatRequest
 from app.domain.chat_response import ChatResponse
 from app.domain.conversation_message import ConversationMessage
 from app.domain.recommendation import Recommendation
 from app.domain.retrieved_book import RetrievedBook
 from app.services.input_filter import InputFilter
+from app.services.input_safety_validator import InputSafetyValidator
+from app.services.intent_classifier import IntentClassifier
 from app.services.llm_client import LLMClient
 from app.services.recommendation_prompt import (
 	GET_SUMMARY_TOOL,
@@ -27,27 +34,42 @@ class ChatService:
 		"Hello. I can recommend books from the local catalogue, summarize books I "
 		"know, and help you narrow a choice by mood, genre, or theme."
 	)
-
+	SAFETY_REJECTION_MESSAGE = (
+		"I can help with books, but I cannot process profanity or obscene content."
+	)
 	def __init__(
 		self,
 		input_filter: InputFilter,
 		retriever: Retriever,
 		llm_client: LLMClient,
 		tool_executor: ToolCallExecutor,
+		intent_classifier: IntentClassifier | None = None,
+		input_safety_validator: InputSafetyValidator | None = None,
 	) -> None:
 		self._input_filter = input_filter
 		self._retriever = retriever
 		self._llm_client = llm_client
 		self._tool_executor = tool_executor
+		self._intent_classifier = intent_classifier
+		self._input_safety_validator = input_safety_validator
 
 	def recommend(self, request: ChatRequest) -> ChatResponse:
 		question = self._input_filter.validate(request.question)
+		if self._input_safety_validator is not None:
+			try:
+				safety = self._input_safety_validator.validate(question, request.history)
+			except InputSafetyError as error:
+				raise ChatServiceError("Unable to validate chat input") from error
+			if not safety.allowed:
+				return ChatResponse(message=self.SAFETY_REJECTION_MESSAGE)
+		if self._intent_classifier is not None:
+			try:
+				intent = self._intent_classifier.classify(question, request.history)
+			except IntentClassificationError as error:
+				raise ChatServiceError("Unable to classify chat request") from error
+			if intent.intent in {"greeting", "capabilities", "general_conversation"}:
+				return ChatResponse(message=self.CAPABILITIES_MESSAGE)
 		intent_question = request.question
-		if re.fullmatch(
-			r"(?:hi|hello|hey|good morning|good afternoon|good evening)[!. ]*",
-			intent_question.casefold(),
-		):
-			return ChatResponse(message=self.CAPABILITIES_MESSAGE)
 		retrieved_books = self._retriever.retrieve(question)
 		ambiguous = self._is_ambiguous_request(intent_question, retrieved_books)
 		previous_titles = self._previously_recommended_titles(request.history)

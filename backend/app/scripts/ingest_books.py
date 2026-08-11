@@ -1,10 +1,10 @@
 import json
 
 from app.core.config import get_settings
-from app.services.book_repository import BookRepository
-from app.services.chroma_store import ChromaVectorStore
-from app.services.ingestion_service import IngestionService
-from app.services.llm_client import OpenAIClient
+from app.services.catalogue.book_repository import BookRepository
+from app.services.catalogue.ingestion_service import IngestionService
+from app.services.llm.llm_client import OpenAIClient
+from app.services.retrieval.chroma_store import ChromaVectorStore
 
 
 def main() -> None:

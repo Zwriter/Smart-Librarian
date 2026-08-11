@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_google_books_search_service
 from app.domain.google_book_search import GoogleBookSearchResponse
-from app.services.google_books_search import GoogleBooksSearchService
+from app.services.google_books.google_books_search import GoogleBooksSearchService
 
 router = APIRouter(prefix="/books", tags=["books"])
 

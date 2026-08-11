@@ -4,25 +4,26 @@ from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
 	from app.domain.chat_request import ChatRequest
 	from app.domain.chat_response import ChatResponse
-	from app.services.chat_service import ChatService
-	from app.services.google_books_client import GoogleBooksApiClient
-	from app.services.google_books_repository import SQLiteGoogleBooksRepository
-	from app.services.google_books_search import GoogleBooksSearchService
+	from app.services.conversation.chat_service import ChatService
+	from app.services.google_books.google_books_client import GoogleBooksApiClient
+	from app.services.google_books.google_books_repository import SQLiteGoogleBooksRepository
+	from app.services.google_books.google_books_search import GoogleBooksSearchService
 
 
 @lru_cache(maxsize=1)
 def _build_chat_service() -> "ChatService":
 	from app.core.config import get_settings
-	from app.services.book_repository import BookRepository
-	from app.services.chat_service import ChatService
-	from app.services.chroma_store import ChromaVectorStore
-	from app.services.input_filter import InputFilter
-	from app.services.input_safety_validator import InputSafetyValidator
-	from app.services.intent_classifier import IntentClassifier
-	from app.services.llm_client import OpenAIClient
-	from app.services.retriever import Retriever
-	from app.services.summary_tool import SummaryTool
-	from app.services.tool_call_executor import ToolCallExecutor
+	from app.services.catalogue.book_repository import BookRepository
+	from app.services.catalogue.book_search_service import BookSearchService
+	from app.services.catalogue.summary_tool import SummaryTool
+	from app.services.conversation.chat_service import ChatService
+	from app.services.conversation.intent_classifier import IntentClassifier
+	from app.services.llm.llm_client import OpenAIClient
+	from app.services.retrieval.chroma_store import ChromaVectorStore
+	from app.services.retrieval.retriever import Retriever
+	from app.services.safety.input_filter import InputFilter
+	from app.services.safety.input_safety_validator import InputSafetyValidator
+	from app.services.tools.tool_call_executor import ToolCallExecutor
 
 	settings = get_settings()
 	book_repository = BookRepository(settings.book_data_path)
@@ -47,6 +48,8 @@ def _build_chat_service() -> "ChatService":
 		tool_executor=ToolCallExecutor(SummaryTool(book_repository).get_summary_by_title),
 		intent_classifier=IntentClassifier(llm_client),
 		input_safety_validator=InputSafetyValidator(validation_client),
+		google_books_search=get_google_books_search_service(),
+		book_search=BookSearchService(book_repository, get_google_books_search_service()),
 	)
 
 
@@ -65,7 +68,7 @@ def get_chat_service() -> "ChatService":
 @lru_cache(maxsize=1)
 def get_google_books_client() -> "GoogleBooksApiClient":
 	from app.core.config import get_settings
-	from app.services.google_books_client import GoogleBooksApiClient
+	from app.services.google_books.google_books_client import GoogleBooksApiClient
 
 	settings = get_settings()
 	api_key = (
@@ -84,7 +87,7 @@ def get_google_books_client() -> "GoogleBooksApiClient":
 @lru_cache(maxsize=1)
 def get_google_books_repository() -> "SQLiteGoogleBooksRepository":
 	from app.core.config import get_settings
-	from app.services.google_books_repository import SQLiteGoogleBooksRepository
+	from app.services.google_books.google_books_repository import SQLiteGoogleBooksRepository
 
 	return SQLiteGoogleBooksRepository(get_settings().google_books_cache_path)
 
@@ -92,10 +95,10 @@ def get_google_books_repository() -> "SQLiteGoogleBooksRepository":
 @lru_cache(maxsize=1)
 def get_google_books_search_service() -> "GoogleBooksSearchService":
 	from app.core.config import get_settings
-	from app.services.chroma_store import ChromaVectorStore
-	from app.services.google_books_indexer import GoogleBooksIndexer
-	from app.services.google_books_search import GoogleBooksSearchService
-	from app.services.llm_client import OpenAIClient
+	from app.services.google_books.google_books_indexer import GoogleBooksIndexer
+	from app.services.google_books.google_books_search import GoogleBooksSearchService
+	from app.services.llm.llm_client import OpenAIClient
+	from app.services.retrieval.chroma_store import ChromaVectorStore
 
 	settings = get_settings()
 	llm_client = OpenAIClient(

@@ -27,6 +27,7 @@ class JsonFormatter(logging.Formatter):
 		}
 		for field in (
 			"event",
+			"failure_type",
 			"environment",
 			"service_version",
 			"correlation_id",

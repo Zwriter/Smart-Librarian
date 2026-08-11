@@ -32,7 +32,7 @@ from app.core.exceptions import (
 )
 from app.core.logging_config import configure_logging
 from app.core.safe_logging import safe_log
-from app.services.usage_aggregation import (
+from app.services.llm.usage_aggregation import (
 	DEFAULT_MODEL_PRICING,
 	UsageAggregator,
 	reset_usage_aggregator,
@@ -190,6 +190,16 @@ def create_app(
 		return JSONResponse(status_code=404, content={"detail": str(error)})
 
 	async def handle_service_failure(_request: Request, _error: Exception) -> JSONResponse:
+		safe_log(
+			logger,
+			logging.ERROR,
+			"Recommendation service failure",
+			extra={
+				"event": "service_failure",
+				"correlation_id": get_correlation_id(),
+				"failure_type": type(_error).__name__,
+			},
+		)
 		return JSONResponse(
 			status_code=502,
 			content={"detail": "The recommendation service is temporarily unavailable."},
@@ -220,7 +230,7 @@ def create_app(
 				raise FileNotFoundError("Filter configuration is unavailable")
 
 			if factory is None:
-				from app.services.chroma_store import ChromaVectorStore
+				from app.services.retrieval.chroma_store import ChromaVectorStore
 
 				factory = ChromaVectorStore
 			factory(

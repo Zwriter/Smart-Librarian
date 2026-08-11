@@ -3,8 +3,8 @@ import logging
 from pathlib import Path
 
 from app.core.logging_config import JsonFormatter, configure_logging
-from app.services.llm_client import TokenUsage
-from app.services.usage_aggregation import UsageAggregator
+from app.services.llm.llm_client import TokenUsage
+from app.services.llm.usage_aggregation import UsageAggregator
 
 
 def test_observability_records_approved_usage_fields_without_provider_calls() -> None:

@@ -6,6 +6,7 @@ if TYPE_CHECKING:
 	from app.domain.chat_response import ChatResponse
 	from app.services.chat_service import ChatService
 	from app.services.google_books_client import GoogleBooksApiClient
+	from app.services.google_books_indexer import GoogleBooksIndexer
 	from app.services.google_books_repository import SQLiteGoogleBooksRepository
 	from app.services.google_books_search import GoogleBooksSearchService
 
@@ -90,10 +91,39 @@ def get_google_books_repository() -> "SQLiteGoogleBooksRepository":
 
 
 @lru_cache(maxsize=1)
-def get_google_books_search_service() -> "GoogleBooksSearchService":
+def _build_google_books_search_service() -> "GoogleBooksSearchService":
 	from app.services.google_books_search import GoogleBooksSearchService
+	from app.core.config import get_settings
+	from app.services.chroma_store import ChromaVectorStore
+	from app.services.google_books_indexer import GoogleBooksIndexer
+	from app.services.llm_client import OpenAIClient
 
+	settings = get_settings()
+	llm_client = OpenAIClient(
+		api_key=settings.openai_api_key.get_secret_value(),
+		chat_model=settings.openai_chat_model,
+		embedding_model=settings.openai_embedding_model,
+	)
 	return GoogleBooksSearchService(
 		client=get_google_books_client(),
 		repository=get_google_books_repository(),
+		indexer=GoogleBooksIndexer(
+			llm_client,
+			ChromaVectorStore(
+				persist_directory=settings.chroma_persist_directory,
+				collection_name=settings.google_books_collection_name,
+			),
+		),
 	)
+
+
+class _LazyGoogleBooksSearchService:
+	"""Defers API-key and infrastructure loading until a valid search arrives."""
+
+	def search(self, query: str, limit: int) -> tuple["GoogleBook", ...]:
+		return _build_google_books_search_service().search(query, limit)
+
+
+@lru_cache(maxsize=1)
+def get_google_books_search_service() -> "GoogleBooksSearchService":
+	return cast("GoogleBooksSearchService", _LazyGoogleBooksSearchService())

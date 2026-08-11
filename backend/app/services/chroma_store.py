@@ -39,6 +39,13 @@ class ChromaVectorStore:
 		except Exception as error:
 			raise RetrievalError("Vector store query failed") from error
 
+	def existing_ids(self, ids: Sequence[str]) -> set[str]:
+		try:
+			existing = self._collection.get(ids=list(ids)).get("ids", [])
+			return {item for item in existing if isinstance(item, str)}
+		except Exception as error:
+			raise RetrievalError("Vector store lookup failed") from error
+
 	def upsert(
 		self,
 		ids: Sequence[str],
@@ -47,13 +54,13 @@ class ChromaVectorStore:
 		metadatas: Sequence[dict[str, str]],
 	) -> set[str]:
 		try:
-			existing = self._collection.get(ids=list(ids)).get("ids", [])
+			existing = self.existing_ids(ids)
 			self._collection.upsert(
 				ids=list(ids),
 				documents=list(documents),
 				embeddings=[list(embedding) for embedding in embeddings],
 				metadatas=list(metadatas),
 			)
-			return {item for item in existing if isinstance(item, str)}
+			return existing
 		except Exception as error:
 			raise RetrievalError("Vector store upsert failed") from error

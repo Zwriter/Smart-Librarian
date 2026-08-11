@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 	google_books_timeout_seconds: float = Field(default=10.0, gt=0)
 	google_books_max_results: int = Field(default=10, gt=0, le=40)
 	google_books_cache_path: Path = BACKEND_ROOT / ".google_books_cache.sqlite3"
+	google_books_collection_name: str = Field(default="google_books", min_length=1)
 	chroma_persist_directory: Path = BACKEND_ROOT / ".chroma"
 	chroma_collection_name: str = Field(default="books", min_length=1)
 	book_data_path: Path = BACKEND_ROOT / "data" / "book_summaries.json"
@@ -75,6 +76,7 @@ class Settings(BaseSettings):
 		"openai_validation_model",
 		"openai_embedding_model",
 		"google_books_base_url",
+		"google_books_collection_name",
 		"chroma_collection_name",
 		mode="before",
 	)

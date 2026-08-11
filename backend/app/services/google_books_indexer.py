@@ -30,13 +30,20 @@ class GoogleBooksIndexer:
 	def index(self, books: Sequence[GoogleBook]) -> None:
 		ids = [self._document_id(book) for book in books]
 		existing_ids = self._vector_store.existing_ids(ids)
-		new_books = [book for book, document_id in zip(books, ids, strict=True) if document_id not in existing_ids]
+		new_books = [
+			book
+			for book, document_id in zip(books, ids, strict=True)
+			if document_id not in existing_ids
+		]
 		if not new_books:
 			return
 
 		documents = [self._document(book) for book in new_books]
 		try:
-			embeddings = [self._llm_client.create_embedding(document).embedding for document in documents]
+			embeddings = [
+				self._llm_client.create_embedding(document).embedding
+				for document in documents
+			]
 		except Exception as error:
 			raise LLMClientError("Unable to embed Google Books data") from error
 

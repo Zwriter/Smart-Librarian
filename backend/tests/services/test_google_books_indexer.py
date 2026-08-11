@@ -16,7 +16,9 @@ class FakeLLM:
 class FakeStore:
 	def __init__(self, existing: set[str]) -> None:
 		self.existing = existing
-		self.upserted: tuple[list[str], list[str], list[list[float]], list[dict[str, str]]] | None = None
+		self.upserted: (
+			tuple[list[str], list[str], list[list[float]], list[dict[str, str]]] | None
+		) = None
 
 	def existing_ids(self, ids: list[str]) -> set[str]:
 		return set(ids) & self.existing

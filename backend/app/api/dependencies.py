@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
 	from app.domain.chat_request import ChatRequest
 	from app.domain.chat_response import ChatResponse
+	from app.domain.google_book import GoogleBook
 	from app.services.chat_service import ChatService
 	from app.services.google_books_client import GoogleBooksApiClient
-	from app.services.google_books_indexer import GoogleBooksIndexer
 	from app.services.google_books_repository import SQLiteGoogleBooksRepository
 	from app.services.google_books_search import GoogleBooksSearchService
 
@@ -92,10 +92,10 @@ def get_google_books_repository() -> "SQLiteGoogleBooksRepository":
 
 @lru_cache(maxsize=1)
 def _build_google_books_search_service() -> "GoogleBooksSearchService":
-	from app.services.google_books_search import GoogleBooksSearchService
 	from app.core.config import get_settings
 	from app.services.chroma_store import ChromaVectorStore
 	from app.services.google_books_indexer import GoogleBooksIndexer
+	from app.services.google_books_search import GoogleBooksSearchService
 	from app.services.llm_client import OpenAIClient
 
 	settings = get_settings()

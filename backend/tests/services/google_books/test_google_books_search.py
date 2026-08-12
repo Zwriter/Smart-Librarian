@@ -94,6 +94,21 @@ def test_exact_title_search_refreshes_cache_without_an_exact_match() -> None:
 	assert client.calls == [("intitle:Dune", 10)]
 
 
+def test_exact_title_search_applies_requested_limit_to_provider_results() -> None:
+	client = FakeClient(
+		(
+			make_book("provider-1"),
+			make_book("provider-2"),
+		)
+	)
+
+	result = GoogleBooksSearchService(client, FakeRepository()).search(
+		"intitle:Dune", 1
+	)
+
+	assert result == (client.books[0],)
+
+
 def test_exact_title_search_matches_accents_and_hyphens() -> None:
 	client = FakeClient(
 		(

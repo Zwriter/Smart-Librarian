@@ -37,7 +37,7 @@ class GoogleBooksSearchService:
 		self._repository.save(query, books)
 		matched_books = self._filter_exact_title(books, exact_title)
 		self._index_best_effort(matched_books)
-		return matched_books
+		return matched_books[:limit]
 
 	@classmethod
 	def _filter_exact_title(

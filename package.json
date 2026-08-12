@@ -1,0 +1,28 @@
+{
+  "name": "smart-librarian-ai-rag",
+  "version": "1.0.0",
+  "description": "Smart Librarian is a full-stack book recommendation application. A user describes what they want to read in the React interface, and the FastAPI backend combines input filtering, semantic retrieval from a Chroma catalogue, and an OpenAI recommendation workflow to return one book, its rationale, and the complete locally stored summary.",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && .venv\\Scripts\\python.exe -m pytest",
+    "test:frontend": "npm --prefix frontend test",
+    "dev": "node scripts/dev.js",
+    "dev:servers": "concurrently -k -n BACKEND,FRONTEND -c blue,green \"cd backend && .venv\\Scripts\\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\" \"npm --prefix frontend run dev\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zwriter/Smart-Librarian-AI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Zwriter/Smart-Librarian-AI/issues"
+  },
+  "homepage": "https://github.com/Zwriter/Smart-Librarian-AI#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.4"
+  }
+}

@@ -13,3 +13,4 @@ backend/secrets/
 .venv/
 backend/.chroma/
 backend/logs/
+node_modules/

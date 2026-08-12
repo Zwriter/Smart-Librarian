@@ -123,10 +123,10 @@ class _LazyGoogleBooksSearchService:
 	"""Defers settings and infrastructure loading until a valid search arrives."""
 
 	def search(self, query: str, limit: int) -> tuple["GoogleBook", ...]:
-		return cast(
-			"tuple[GoogleBook, ...]",
-			_build_google_books_search_service().search(query, limit),
+		books: tuple[GoogleBook, ...] = _build_google_books_search_service().search(
+			query, limit
 		)
+		return books
 
 
 @lru_cache(maxsize=1)

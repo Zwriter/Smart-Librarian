@@ -87,7 +87,11 @@ class ChatService:
 		try:
 			resolved_book = self._resolve_requested_book(intent)
 		except BookNotFoundError:
-			return ChatResponse(message="I don't know that book from the catalogue.")
+			resolved_book = None
+		except GoogleBooksError:
+			return ChatResponse(
+				message="I couldn't look up that book right now. Please try again shortly."
+			)
 		retrieved_books = (
 			(self._as_retrieved_book_data(resolved_book),)
 			if resolved_book is not None
@@ -169,7 +173,12 @@ class ChatService:
 		):
 			return ()
 		try:
-			return self._google_books_search.search(question, 3)
+			query = (
+				f"intitle:{intent.book_title}"
+				if intent is not None and intent.book_title
+				else question
+			)
+			return self._google_books_search.search(query, 3)
 		except GoogleBooksError:
 			return ()
 
@@ -221,15 +230,15 @@ class ChatService:
 		local_books: Sequence[RetrievedBook],
 		intent: ConversationIntent | None,
 	) -> bool:
-		if intent is not None and not intent.requires_retrieval:
-			return False
 		if not local_books:
-			return True
+			return intent is None or intent.book_title is not None
 		if any(
 			book.book.metadata.get("source") == "google_books"
 			for book in local_books
 		):
 			return True
+		if intent is not None and not intent.requires_retrieval:
+			return False
 		if intent is None or intent.book_title is None:
 			return False
 		return not any(
@@ -257,7 +266,21 @@ class ChatService:
 		content: str,
 		books: Sequence[GoogleBook],
 	) -> ChatResponse:
-		recommendation = cls._parse_recommendation(content)
+		try:
+			recommendation = cls._parse_recommendation(content)
+		except ChatServiceError:
+			book = books[0]
+			description = book.description or "No description available from Google Books."
+			return ChatResponse(
+				recommendation=Recommendation(
+					title=book.title,
+					author=", ".join(book.authors) or "Unknown author",
+					rationale=cls._compact_summary(description),
+					published_date=book.published_date,
+					publisher=book.publisher,
+				),
+				summary=description,
+			)
 		matched_book = next(
 			(book for book in books if book.title.casefold() == recommendation.title.casefold()),
 			None,
@@ -265,9 +288,15 @@ class ChatService:
 		if matched_book is None:
 			raise ChatServiceError("Recommendation provider returned an unknown external book")
 		description = matched_book.description or "No description available from Google Books."
+		recommendation = recommendation.model_copy(
+			update={
+				"published_date": matched_book.published_date,
+				"publisher": matched_book.publisher,
+			}
+		)
 		return ChatResponse(
 			recommendation=recommendation,
-			summary=f"[Google Books external metadata] {description}",
+			summary=description,
 		)
 
 	@staticmethod

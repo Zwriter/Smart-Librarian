@@ -58,3 +58,14 @@ def test_indexer_does_not_embed_when_all_volume_ids_exist() -> None:
 
 	assert llm.texts == []
 	assert store.upserted is None
+
+
+def test_indexer_deduplicates_duplicate_volume_ids_before_embedding() -> None:
+	llm = FakeLLM()
+	store = FakeStore(set())
+
+	GoogleBooksIndexer(llm, store).index((make_book("new"), make_book("new")))
+
+	assert len(llm.texts) == 1
+	assert store.upserted is not None
+	assert store.upserted[0] == ["google-volume:new"]

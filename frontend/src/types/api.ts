@@ -14,6 +14,8 @@ export type Recommendation = {
   title: string
   author: string
   rationale: string
+  published_date?: string | null
+  publisher?: string | null
 }
 
 export type RecommendationOption = {

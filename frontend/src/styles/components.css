@@ -50,6 +50,7 @@ textarea:focus { border-bottom: 2px solid var(--accent); box-shadow: var(--shado
 .result-label { margin-bottom: 17px; }
 .recommendation h3 { max-width: 100%; margin-bottom: 5px; font-size: clamp(1.8rem, 3.2vw, 2.8rem); line-height: 1.05; overflow-wrap: anywhere; word-break: break-word; }
 .author { margin-bottom: 25px; color: var(--accent); font-size: 0.9rem; }
+.book-details { margin: -12px 0 25px; color: var(--muted); font: 500 0.72rem/1.4 'DM Mono', monospace; }
 .rationale, .summary > p:not(.result-label) { max-width: 100%; margin-bottom: 0; color: var(--ink); line-height: 1.7; overflow-wrap: anywhere; word-break: break-word; }
 .summary { padding-top: 28px; }
 .summary > p:not(.result-label) { white-space: pre-wrap; }

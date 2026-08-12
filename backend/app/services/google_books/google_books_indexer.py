@@ -28,11 +28,12 @@ class GoogleBooksIndexer:
 		self._vector_store = vector_store
 
 	def index(self, books: Sequence[GoogleBook]) -> None:
-		ids = [self._document_id(book) for book in books]
+		unique_books = self._unique_books(books)
+		ids = [self._document_id(book) for book in unique_books]
 		existing_ids = self._vector_store.existing_ids(ids)
 		new_books = [
 			book
-			for book, document_id in zip(books, ids, strict=True)
+			for book, document_id in zip(unique_books, ids, strict=True)
 			if document_id not in existing_ids
 		]
 		if not new_books:
@@ -60,6 +61,13 @@ class GoogleBooksIndexer:
 			raise RetrievalError("Unable to persist Google Books embeddings") from error
 
 	@staticmethod
+	def _unique_books(books: Sequence[GoogleBook]) -> tuple[GoogleBook, ...]:
+		unique_books: dict[str, GoogleBook] = {}
+		for book in books:
+			unique_books.setdefault(book.volume_id, book)
+		return tuple(unique_books.values())
+
+	@staticmethod
 	def _document_id(book: GoogleBook) -> str:
 		return f"google-volume:{book.volume_id}"
 
@@ -76,4 +84,6 @@ class GoogleBooksIndexer:
 			"title": book.title,
 			"author": ", ".join(book.authors),
 			"description": book.description or "",
+			"published_date": book.published_date or "",
+			"publisher": book.publisher or "",
 		}

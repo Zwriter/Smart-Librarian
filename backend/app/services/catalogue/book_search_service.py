@@ -1,3 +1,5 @@
+import re
+
 from app.core.exceptions import BookNotFoundError
 from app.domain.book import Book
 from app.services.catalogue.book_repository import BookRepository
@@ -24,11 +26,21 @@ class BookSearchService:
 
 		books = self._google_books_search.search(title, 10)
 
-		requested_title = title.strip().casefold()
+		requested_title = self._normalize_title(title)
 		matched_book = next(
-			(book for book in books if book.title.casefold() == requested_title),
+			(book for book in books if self._normalize_title(book.title) == requested_title),
 			None,
 		)
+		if matched_book is None:
+			matched_book = next(
+				(
+					book
+					for book in books
+					if self._singularize_title(self._normalize_title(book.title))
+					== self._singularize_title(requested_title)
+				),
+				None,
+			)
 		if matched_book is None:
 			raise BookNotFoundError(
 				"The book you are trying to access is not available."
@@ -41,3 +53,15 @@ class BookSearchService:
 			description=matched_book.description,
 			metadata={"source": "google_books", "volume_id": matched_book.volume_id},
 		)
+
+	@staticmethod
+	def _normalize_title(title: str) -> str:
+		title = title.strip().casefold().strip("\"'“”‘’")
+		return re.sub(r"\s+", " ", title)
+
+	@staticmethod
+	def _singularize_title(title: str) -> str:
+		words = title.split()
+		if words and len(words[-1]) > 3 and words[-1].endswith("s"):
+			words[-1] = words[-1][:-1]
+		return " ".join(words)

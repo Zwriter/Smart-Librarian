@@ -21,18 +21,53 @@ class GoogleBooksSearchService:
 		self._indexer = indexer
 
 	def search(self, query: str, limit: int) -> tuple[GoogleBook, ...]:
+		exact_title = self._exact_title_query(query)
 		cached_books = self._repository.get(query)
 		if cached_books is not None:
-			return cached_books[:limit]
+			cached_matches = self._filter_exact_title(cached_books, exact_title)
+			if exact_title is None or cached_matches:
+				self._index_best_effort(cached_matches)
+				return cached_matches[:limit]
 
-		books = self._client.search_volumes(query, limit)
+		provider_limit = max(limit, 10) if exact_title is not None else limit
+		books = self._client.search_volumes(query, provider_limit)
 		self._repository.save(query, books)
-		if self._indexer is not None:
-			try:
-				self._indexer.index(books)
-			except (LLMClientError, RetrievalError):
-				logging.getLogger(__name__).warning(
-					"Unable to index Google Books results; returning metadata only",
-					exc_info=True,
-				)
-		return books
+		matched_books = self._filter_exact_title(books, exact_title)
+		self._index_best_effort(matched_books)
+		return matched_books
+
+	@classmethod
+	def _filter_exact_title(
+		cls,
+		books: tuple[GoogleBook, ...],
+		exact_title: str | None,
+	) -> tuple[GoogleBook, ...]:
+		if exact_title is None:
+			return books
+		normalized_title = cls._normalize_title(exact_title)
+		return tuple(
+			book for book in books if cls._normalize_title(book.title) == normalized_title
+		)
+
+	@staticmethod
+	def _exact_title_query(query: str) -> str | None:
+		prefix = "intitle:"
+		if not query.casefold().startswith(prefix):
+			return None
+		title = query[len(prefix):].strip()
+		return title or None
+
+	@staticmethod
+	def _normalize_title(title: str) -> str:
+		return " ".join(title.strip().casefold().split())
+
+	def _index_best_effort(self, books: tuple[GoogleBook, ...]) -> None:
+		if self._indexer is None:
+			return
+		try:
+			self._indexer.index(books)
+		except (LLMClientError, RetrievalError):
+			logging.getLogger(__name__).warning(
+				"Unable to index Google Books results; returning metadata only",
+				exc_info=True,
+			)

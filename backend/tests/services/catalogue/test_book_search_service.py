@@ -65,3 +65,20 @@ def test_book_search_raises_when_local_and_api_have_no_exact_title() -> None:
 
 	with pytest.raises(BookNotFoundError):
 		service.find_by_title("Unknown Book")
+
+
+def test_book_search_accepts_quoted_plural_title_for_external_match() -> None:
+	provider = FakeGoogleBooksSearch(
+		(
+			GoogleBook(
+				volume_id="dune",
+				title="Dune",
+				authors=("Frank Herbert",),
+				description="A desert epic.",
+			),
+		)
+	)
+
+	result = BookSearchService(FakeBookRepository(), provider).find_by_title('"Dunes"')  # type: ignore[arg-type]
+
+	assert result.title == "Dune"

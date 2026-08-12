@@ -1,5 +1,5 @@
 import pytest
-from app.core.exceptions import BookNotFoundError, ChatServiceError
+from app.core.exceptions import BookNotFoundError, ChatServiceError, GoogleBooksError
 from app.domain.book import Book
 from app.domain.chat_request import ChatRequest
 from app.domain.conversation_intent import ConversationIntent
@@ -122,9 +122,7 @@ def test_chat_service_uses_google_books_when_local_catalogue_is_empty() -> None:
 
 	assert google_books.queries == [("normalized question", 3)]
 	assert response.recommendation is not None
-	assert response.summary == (
-		"[Google Books external metadata] Politics and ecology collide on a desert world."
-	)
+	assert response.summary == "Politics and ecology collide on a desert world."
 
 
 def test_chat_service_does_not_use_google_books_when_local_catalogue_has_results() -> None:
@@ -163,6 +161,8 @@ def test_chat_service_uses_google_books_for_unmatched_specific_book_question() -
 				title="The Little Prince",
 				authors=("Antoine de Saint-Exupery",),
 				description="A poetic tale about friendship, love, and responsibility.",
+				published_date="1943",
+				publisher="Reynal & Hitchcock",
 			),
 		)
 	)
@@ -199,12 +199,12 @@ def test_chat_service_uses_google_books_for_unmatched_specific_book_question() -
 
 	response = service.recommend(ChatRequest(question="Tell me something about The Little Prince"))
 
-	assert google_books.queries == [("normalized question", 3)]
+	assert google_books.queries == [("intitle:The Little Prince", 3)]
 	assert response.recommendation is not None
 	assert response.recommendation.title == "The Little Prince"
-	assert response.summary == (
-		"[Google Books external metadata] A poetic tale about friendship, love, and responsibility."
-	)
+	assert response.recommendation.published_date == "1943"
+	assert response.recommendation.publisher == "Reynal & Hitchcock"
+	assert response.summary == "A poetic tale about friendship, love, and responsibility."
 
 
 def test_chat_service_uses_google_books_for_a_bare_unmatched_title() -> None:
@@ -251,8 +251,125 @@ def test_chat_service_uses_google_books_for_a_bare_unmatched_title() -> None:
 
 	response = service.recommend(ChatRequest(question="The Little Prince"))
 
-	assert google_books.queries == [("normalized question", 3)]
+	assert google_books.queries == [("intitle:The Little Prince", 3)]
 	assert response.recommendation is not None
+
+
+def test_chat_service_falls_back_to_google_books_when_title_resolution_misses() -> None:
+	google_books = FakeGoogleBooksSearch(
+		(
+			GoogleBook(
+				volume_id="dune",
+				title="Dune",
+				authors=("Frank Herbert",),
+				description="A desert epic.",
+			),
+		)
+	)
+
+	class MissingBookSearch:
+		def find_by_title(self, title: str) -> Book:
+			raise BookNotFoundError("not found")
+
+	class ExternalRecommendationLLM:
+		def create_chat_completion(self, messages, tools=()):
+			assert tools == ()
+			return ChatCompletionResult(
+				content='{"title":"Dune","author":"Frank Herbert","rationale":"A desert epic."}'
+			)
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		ExternalRecommendationLLM(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+		FakeIntentClassifier("book_summary", "Dune"),  # type: ignore[arg-type]
+		google_books_search=google_books,  # type: ignore[arg-type]
+		book_search=MissingBookSearch(),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question='Tell me more about the book "Dune"'))
+
+	assert google_books.queries == [("intitle:Dune", 3)]
+	assert response.recommendation is not None
+
+
+def test_chat_service_searches_google_books_for_unquoted_book_summary_title() -> None:
+	google_books = FakeGoogleBooksSearch(
+		(
+			GoogleBook(
+				volume_id="dune",
+				title="Dune",
+				authors=("Frank Herbert",),
+				description="A desert epic.",
+			),
+		)
+	)
+
+	class BookSummaryIntentClassifier:
+		def classify(self, question, history=()):
+			return ConversationIntent(
+				intent="book_summary",
+				requires_retrieval=False,
+				requires_summary_tool=True,
+				book_title="Dune",
+			)
+
+	class ExternalRecommendationLLM:
+		def create_chat_completion(self, messages, tools=()):
+			assert tools == ()
+			return ChatCompletionResult(
+				content='{"title":"Dune","author":"Frank Herbert","rationale":"A desert epic."}'
+			)
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		ExternalRecommendationLLM(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+		BookSummaryIntentClassifier(),  # type: ignore[arg-type]
+		google_books_search=google_books,  # type: ignore[arg-type]
+		book_search=None,
+	)
+
+	response = service.recommend(ChatRequest(question="Tell me more about Dune"))
+
+	assert google_books.queries == [("intitle:Dune", 3)]
+	assert response.recommendation is not None
+ 
+
+
+def test_chat_service_builds_external_recommendation_when_model_returns_message() -> None:
+	google_books = FakeGoogleBooksSearch(
+		(
+			GoogleBook(
+				volume_id="dune",
+				title="Dune",
+				authors=("Frank Herbert",),
+				description="A desert epic.",
+			),
+		)
+	)
+
+	class ExternalMessageLLM:
+		def create_chat_completion(self, messages, tools=()):
+			assert tools == ()
+			return ChatCompletionResult(content='{"message":"I do not know that book."}')
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		ExternalMessageLLM(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+		FakeIntentClassifier("book_summary", "Dune"),  # type: ignore[arg-type]
+		google_books_search=google_books,  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="Tell me about Dune"))
+
+	assert response.recommendation is not None
+	assert response.recommendation.title == "Dune"
+	assert response.summary == "A desert epic."
 
 
 def test_chat_service_does_not_use_local_summary_tool_when_search_returns_no_book() -> None:
@@ -343,9 +460,135 @@ def test_chat_service_keeps_google_book_follow_up_out_of_local_summary_tool() ->
 	)
 
 	assert response.recommendation is not None
-	assert response.summary == (
-		"[Google Books external metadata] A poetic tale about friendship, love, and responsibility."
+	assert response.summary == "A poetic tale about friendship, love, and responsibility."
+
+
+def test_chat_service_keeps_indexed_google_book_external_for_summary_intent() -> None:
+	google_books = FakeGoogleBooksSearch(
+		(
+			GoogleBook(
+				volume_id="little-prince",
+				title="The Little Prince",
+				authors=("Antoine de Saint-Exupery",),
+				description="A poetic tale about friendship, love, and responsibility.",
+			),
+		)
 	)
+
+	class IndexedGoogleBookRetriever:
+		def retrieve(self, question: str) -> tuple[RetrievedBook, ...]:
+			return (
+				RetrievedBook(
+					book=Book(
+						title="The Little Prince",
+						author="Antoine de Saint-Exupery",
+						summary="A poetic tale about friendship, love, and responsibility.",
+						metadata={"source": "google_books", "volume_id": "little-prince"},
+					),
+					document_id="google-volume:little-prince",
+					relevance_score=1.0,
+				),
+			)
+
+	class ExternalRecommendationLLM:
+		def create_chat_completion(self, messages, tools=()):
+			assert tools == ()
+			return ChatCompletionResult(
+				content=(
+					'{"title":"The Little Prince",'
+					'"author":"Antoine de Saint-Exupery",'
+					'"rationale":"A thoughtful story about human connection."}'
+				)
+			)
+
+	service = ChatService(
+		FakeInputFilter(),
+		IndexedGoogleBookRetriever(),  # type: ignore[arg-type]
+		ExternalRecommendationLLM(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+		FakeIntentClassifier("book_summary", "The Little Prince"),  # type: ignore[arg-type]
+		google_books_search=google_books,  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="Tell me more about The Little Prince"))
+
+	assert google_books.queries == [("intitle:The Little Prince", 3)]
+	assert response.recommendation is not None
+	assert response.summary == "A poetic tale about friendship, love, and responsibility."
+
+
+def test_chat_service_queries_external_follow_up_by_classified_title() -> None:
+	google_books = FakeGoogleBooksSearch(
+		(
+			GoogleBook(
+				volume_id="little-prince",
+				title="The Little Prince",
+				authors=("Antoine de Saint-Exupery",),
+				description="A poetic tale about friendship, love, and responsibility.",
+			),
+		)
+	)
+
+	class ExternalBookSearch:
+		def find_by_title(self, title: str) -> Book:
+			return Book(
+				title=title,
+				author="Antoine de Saint-Exupery",
+				summary="A poetic tale about friendship, love, and responsibility.",
+				metadata={"source": "google_books", "volume_id": "little-prince"},
+			)
+
+	class ExternalRecommendationLLM:
+		def create_chat_completion(self, messages, tools=()):
+			assert tools == ()
+			return ChatCompletionResult(
+				content=(
+					'{"title":"The Little Prince",'
+					'"author":"Antoine de Saint-Exupery",'
+					'"rationale":"A thoughtful story about human connection."}'
+				)
+			)
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		ExternalRecommendationLLM(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+		FakeIntentClassifier("search", "The Little Prince"),  # type: ignore[arg-type]
+		google_books_search=google_books,  # type: ignore[arg-type]
+		book_search=ExternalBookSearch(),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(
+		ChatRequest(question="Tell me more about The Little Prince")
+	)
+
+	assert google_books.queries == [("intitle:The Little Prince", 3)]
+	assert response.recommendation is not None
+	assert response.summary == "A poetic tale about friendship, love, and responsibility."
+
+
+def test_chat_service_returns_message_when_external_title_lookup_fails() -> None:
+	class UnavailableExternalBookSearch:
+		def find_by_title(self, title: str) -> Book:
+			raise GoogleBooksError("Google Books search failed")
+
+	class FailingLLM:
+		def create_chat_completion(self, messages, tools=()):
+			raise AssertionError("LLM should not run after a failed title lookup")
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		FailingLLM(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+		FakeIntentClassifier("search", "The Little Prince"),  # type: ignore[arg-type]
+		book_search=UnavailableExternalBookSearch(),  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="Tell me more about The Little Prince"))
+
+	assert response.message == "I couldn't look up that book right now. Please try again shortly."
 
 
 def test_chat_service_orchestrates_recommendation_and_summary() -> None:

@@ -18,6 +18,8 @@ def test_search_volumes_maps_google_payload() -> None:
 							"title": "Dune",
 							"authors": ["Frank Herbert"],
 							"description": "A desert planet.",
+							"publishedDate": "1965",
+							"publisher": "Chilton Books",
 							"industryIdentifiers": [
 								{"type": "ISBN_13", "identifier": "9780441013593"}
 							],
@@ -37,6 +39,8 @@ def test_search_volumes_maps_google_payload() -> None:
 	assert books[0].volume_id == "volume-1"
 	assert books[0].authors == ("Frank Herbert",)
 	assert books[0].isbn_13 == "9780441013593"
+	assert books[0].published_date == "1965"
+	assert books[0].publisher == "Chilton Books"
 
 
 def test_search_volumes_wraps_provider_errors() -> None:

@@ -7,6 +7,8 @@ class Recommendation(BaseModel):
 	title: str = Field(min_length=1)
 	author: str = Field(min_length=1)
 	rationale: str = Field(min_length=1)
+	published_date: str | None = None
+	publisher: str | None = None
 
 	@field_validator("title", "author", "rationale", mode="before")
 	@classmethod

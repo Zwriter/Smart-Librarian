@@ -10,6 +10,8 @@ test('renders long recommendation metadata without truncation', () => {
         title: 'The Absolutely Remarkable Story With An Unusually Long Title',
         author: 'An Author With A Name That Needs Room To Wrap Gracefully',
         rationale: longRationale,
+        published_date: '2024',
+        publisher: 'Example Press',
       }}
     />,
   )
@@ -17,6 +19,8 @@ test('renders long recommendation metadata without truncation', () => {
   const card = screen.getByRole('region', { name: 'The Absolutely Remarkable Story With An Unusually Long Title' })
   expect(within(card).getByRole('heading')).toHaveTextContent('The Absolutely Remarkable Story With An Unusually Long Title')
   expect(within(card).getByText('An Author With A Name That Needs Room To Wrap Gracefully')).toBeVisible()
+  expect(within(card).getByText(/Published 2024/)).toBeVisible()
+  expect(within(card).getByText('Example Press')).toBeVisible()
   expect(within(card).getByText(longRationale)).toBeVisible()
 })
 

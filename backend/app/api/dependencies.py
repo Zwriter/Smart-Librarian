@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
 	from app.domain.chat_request import ChatRequest
 	from app.domain.chat_response import ChatResponse
+	from app.domain.google_book import GoogleBook
 	from app.services.conversation.chat_service import ChatService
 	from app.services.google_books.google_books_client import GoogleBooksApiClient
 	from app.services.google_books.google_books_repository import SQLiteGoogleBooksRepository
@@ -92,8 +93,7 @@ def get_google_books_repository() -> "SQLiteGoogleBooksRepository":
 	return SQLiteGoogleBooksRepository(get_settings().google_books_cache_path)
 
 
-@lru_cache(maxsize=1)
-def get_google_books_search_service() -> "GoogleBooksSearchService":
+def _build_google_books_search_service() -> "GoogleBooksSearchService":
 	from app.core.config import get_settings
 	from app.services.google_books.google_books_indexer import GoogleBooksIndexer
 	from app.services.google_books.google_books_search import GoogleBooksSearchService
@@ -117,3 +117,18 @@ def get_google_books_search_service() -> "GoogleBooksSearchService":
 			),
 		),
 	)
+
+
+class _LazyGoogleBooksSearchService:
+	"""Defers settings and infrastructure loading until a valid search arrives."""
+
+	def search(self, query: str, limit: int) -> tuple["GoogleBook", ...]:
+		return cast(
+			"tuple[GoogleBook, ...]",
+			_build_google_books_search_service().search(query, limit),
+		)
+
+
+@lru_cache(maxsize=1)
+def get_google_books_search_service() -> "GoogleBooksSearchService":
+	return cast("GoogleBooksSearchService", _LazyGoogleBooksSearchService())

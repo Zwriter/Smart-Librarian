@@ -1,4 +1,5 @@
 import json
+import re
 from collections.abc import Sequence
 from typing import Any, Protocol, cast
 
@@ -115,7 +116,8 @@ class ChatService:
 			request.history,
 			prompt_books,
 			ambiguous=ambiguous,
-		previous_titles=previous_titles,
+			previous_titles=previous_titles,
+			response_language=intent.response_language if intent is not None else None,
 		)
 		allow_summary_tool = self._allows_summary_tool(intent, retrieved_books, external_context)
 		try:
@@ -178,7 +180,16 @@ class ChatService:
 				if intent is not None and intent.book_title
 				else question
 			)
-			return self._google_books_search.search(query, 3)
+			books = self._google_books_search.search(query, 3)
+			if intent is not None and intent.response_language:
+				localized_books = tuple(
+					book
+					for book in books
+					if book.language == intent.response_language
+				)
+				if localized_books:
+					return localized_books
+			return books
 		except GoogleBooksError:
 			return ()
 
@@ -269,7 +280,7 @@ class ChatService:
 		try:
 			recommendation = cls._parse_recommendation(content)
 		except ChatServiceError:
-			book = books[0]
+			book = cls._select_external_book(books)
 			description = book.description or "No description available from Google Books."
 			return ChatResponse(
 				recommendation=Recommendation(
@@ -278,13 +289,14 @@ class ChatService:
 					rationale=cls._compact_summary(description),
 					published_date=book.published_date,
 					publisher=book.publisher,
+					language=book.language,
 				),
 				summary=description,
 			)
-		matched_book = next(
-			(book for book in books if book.title.casefold() == recommendation.title.casefold()),
-			None,
+		matching_books = tuple(
+			book for book in books if book.title.casefold() == recommendation.title.casefold()
 		)
+		matched_book = cls._select_external_book(matching_books) if matching_books else None
 		if matched_book is None:
 			raise ChatServiceError("Recommendation provider returned an unknown external book")
 		description = matched_book.description or "No description available from Google Books."
@@ -292,11 +304,26 @@ class ChatService:
 			update={
 				"published_date": matched_book.published_date,
 				"publisher": matched_book.publisher,
+				"language": matched_book.language,
 			}
 		)
 		return ChatResponse(
 			recommendation=recommendation,
 			summary=description,
+		)
+
+	@staticmethod
+	def _select_external_book(books: Sequence[GoogleBook]) -> GoogleBook:
+		if not books:
+			raise ChatServiceError("Google Books returned no matching book")
+		return max(
+			books,
+			key=lambda book: (
+				bool(book.published_date and re.fullmatch(r"\d{4}", book.published_date)),
+				bool(book.description),
+				bool(book.authors),
+				bool(book.publisher),
+			),
 		)
 
 	@staticmethod

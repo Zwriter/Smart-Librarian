@@ -1,4 +1,6 @@
 import logging
+import re
+import unicodedata
 
 from app.core.exceptions import LLMClientError, RetrievalError
 from app.domain.google_book import GoogleBook
@@ -25,7 +27,8 @@ class GoogleBooksSearchService:
 		cached_books = self._repository.get(query)
 		if cached_books is not None:
 			cached_matches = self._filter_exact_title(cached_books, exact_title)
-			if exact_title is None or cached_matches:
+			cache_is_complete = all(book.language is not None for book in cached_matches)
+			if exact_title is None or (cached_matches and cache_is_complete):
 				self._index_best_effort(cached_matches)
 				return cached_matches[:limit]
 
@@ -59,7 +62,11 @@ class GoogleBooksSearchService:
 
 	@staticmethod
 	def _normalize_title(title: str) -> str:
-		return " ".join(title.strip().casefold().split())
+		decomposed = unicodedata.normalize("NFKD", title.casefold())
+		without_diacritics = "".join(
+			character for character in decomposed if not unicodedata.combining(character)
+		)
+		return re.sub(r"[^\w]+", " ", without_diacritics, flags=re.ASCII).strip()
 
 	def _index_best_effort(self, books: tuple[GoogleBook, ...]) -> None:
 		if self._indexer is None:

@@ -16,6 +16,7 @@ export type Recommendation = {
   rationale: string
   published_date?: string | null
   publisher?: string | null
+  language?: string | null
 }
 
 export type RecommendationOption = {

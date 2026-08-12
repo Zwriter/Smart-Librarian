@@ -1,4 +1,5 @@
 import re
+import unicodedata
 
 from app.core.exceptions import BookNotFoundError
 from app.domain.book import Book
@@ -56,8 +57,11 @@ class BookSearchService:
 
 	@staticmethod
 	def _normalize_title(title: str) -> str:
-		title = title.strip().casefold().strip("\"'“”‘’")
-		return re.sub(r"\s+", " ", title)
+		decomposed = unicodedata.normalize("NFKD", title.casefold())
+		without_diacritics = "".join(
+			character for character in decomposed if not unicodedata.combining(character)
+		)
+		return re.sub(r"[^\w]+", " ", without_diacritics, flags=re.ASCII).strip()
 
 	@staticmethod
 	def _singularize_title(title: str) -> str:

@@ -20,6 +20,7 @@ def test_search_volumes_maps_google_payload() -> None:
 							"description": "A desert planet.",
 							"publishedDate": "1965",
 							"publisher": "Chilton Books",
+							"language": "en",
 							"industryIdentifiers": [
 								{"type": "ISBN_13", "identifier": "9780441013593"}
 							],
@@ -41,6 +42,7 @@ def test_search_volumes_maps_google_payload() -> None:
 	assert books[0].isbn_13 == "9780441013593"
 	assert books[0].published_date == "1965"
 	assert books[0].publisher == "Chilton Books"
+	assert books[0].language == "en"
 
 
 def test_search_volumes_wraps_provider_errors() -> None:

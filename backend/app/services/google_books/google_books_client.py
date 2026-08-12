@@ -21,6 +21,7 @@ class _VolumeInfo(BaseModel):
 	description: str | None = None
 	published_date: str | None = Field(default=None, validation_alias="publishedDate")
 	publisher: str | None = None
+	language: str | None = None
 	categories: list[str] = Field(default_factory=list)
 	image_links: dict[str, str] = Field(default_factory=dict, validation_alias="imageLinks")
 	industry_identifiers: list[dict[str, str]] = Field(
@@ -98,6 +99,7 @@ class GoogleBooksApiClient:
 			description=volume.volume_info.description,
 			published_date=volume.volume_info.published_date,
 			publisher=volume.volume_info.publisher,
+			language=volume.volume_info.language,
 			categories=tuple(volume.volume_info.categories),
 			thumbnail_url=volume.volume_info.image_links.get("thumbnail"),
 			isbn_10=identifiers.get("ISBN_10"),

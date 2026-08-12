@@ -372,6 +372,47 @@ def test_chat_service_builds_external_recommendation_when_model_returns_message(
 	assert response.summary == "A desert epic."
 
 
+def test_chat_service_prefers_external_books_in_response_language() -> None:
+	google_books = FakeGoogleBooksSearch(
+		(
+			GoogleBook(volume_id="english", title="Dune", language="en"),
+			GoogleBook(volume_id="romanian", title="Dune", language="ro"),
+		)
+	)
+
+	class RomanianIntentClassifier:
+		def classify(self, question, history=()):
+			return ConversationIntent(
+				intent="search",
+				requires_retrieval=False,
+				requires_summary_tool=False,
+				book_title="Dune",
+				response_language="ro",
+			)
+
+	class ExternalRecommendationLLM:
+		def create_chat_completion(self, messages, tools=()):
+			assert tools == ()
+			return ChatCompletionResult(
+				content='{"title":"Dune","author":"Frank Herbert","rationale":"O alegere buna."}'
+			)
+
+	service = ChatService(
+		FakeInputFilter(),
+		FakeRetriever(),  # type: ignore[arg-type]
+		ExternalRecommendationLLM(),  # type: ignore[arg-type]
+		FakeToolExecutor(),  # type: ignore[arg-type]
+		RomanianIntentClassifier(),  # type: ignore[arg-type]
+		google_books_search=google_books,  # type: ignore[arg-type]
+	)
+
+	response = service.recommend(ChatRequest(question="Spune-mi despre Dune"))
+
+	assert response.recommendation is not None
+	assert response.summary == "No description available from Google Books."
+	assert google_books.books[1].volume_id == "romanian"
+
+
 def test_chat_service_does_not_use_local_summary_tool_when_search_returns_no_book() -> None:
 	class EmptyGoogleBooksSearch:
 		def search(self, query: str, limit: int) -> tuple[GoogleBook, ...]:

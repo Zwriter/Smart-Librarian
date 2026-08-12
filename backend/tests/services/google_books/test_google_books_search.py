@@ -92,3 +92,21 @@ def test_exact_title_search_refreshes_cache_without_an_exact_match() -> None:
 
 	assert result == client.books
 	assert client.calls == [("intitle:Dune", 10)]
+
+
+def test_exact_title_search_matches_accents_and_hyphens() -> None:
+	client = FakeClient(
+		(
+			GoogleBook(
+				volume_id="fat-frumos",
+				title="Făt-Frumos din lacrimă",
+				language="ro",
+			),
+		)
+	)
+
+	result = GoogleBooksSearchService(client, FakeRepository()).search(
+		"intitle:Fat Frumos din lacrima", 3
+	)
+
+	assert result[0].title == "Făt-Frumos din lacrimă"

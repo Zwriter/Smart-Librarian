@@ -56,6 +56,7 @@ def build_recommendation_messages(
 	retrieved_books: Sequence[RetrievedBook],
 	ambiguous: bool = False,
 	previous_titles: set[str] | None = None,
+	response_language: str | None = None,
 ) -> list[dict[str, str]]:
 	"""Build the complete provider-neutral message list for recommendations."""
 	context = "\n\n".join(
@@ -69,6 +70,12 @@ def build_recommendation_messages(
 		"Retrieved catalogue context:\n"
 		f"{context if context else 'No catalogue books were retrieved.'}"
 	)
+	language_instruction = (
+		f"Respond entirely in the language identified by ISO 639-1 code "
+		f"{response_language}. Keep book titles and author names in their original form."
+		if response_language
+		else "Respond in the language used by the user's latest message."
+	)
 
 	messages = [
 		{"role": "system", "content": RECOMMENDATION_SYSTEM_PROMPT},
@@ -77,6 +84,7 @@ def build_recommendation_messages(
 			for message in history
 		),
 		{"role": "system", "content": context_message},
+		{"role": "system", "content": language_instruction},
 		{"role": "user", "content": question},
 	]
 	if ambiguous:

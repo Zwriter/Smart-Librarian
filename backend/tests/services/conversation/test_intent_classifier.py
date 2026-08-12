@@ -77,6 +77,23 @@ def test_intent_classifier_accepts_search_action() -> None:
 	assert result.book_title == "The Little Prince"
 
 
+def test_intent_classifier_parses_ai_selected_response_language() -> None:
+	client = FakeLLMClient(
+		ChatCompletionResult(
+			content=(
+				'{"intent":"recommendation","requires_retrieval":true,'
+				'"requires_summary_tool":false,"book_title":null,'
+				'"response_language":"ro"}'
+			)
+		)
+	)
+	classifier = IntentClassifier(client)  # type: ignore[arg-type]
+
+	result = classifier.classify("Recomandă-mi o carte despre natură umană")
+
+	assert result.response_language == "ro"
+
+
 @pytest.mark.parametrize(
 	"result",
 	[

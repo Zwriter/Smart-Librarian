@@ -23,6 +23,17 @@ def test_prompt_contains_rules_history_context_and_question() -> None:
 	assert messages[-1] == {"role": "user", "content": "Recommend a book."}
 
 
+def test_prompt_instructs_ai_to_use_selected_response_language() -> None:
+	messages = build_recommendation_messages(
+		"Recomandă-mi o carte.",
+		(),
+		(),
+		response_language="ro",
+	)
+
+	assert "ISO 639-1 code ro" in messages[-2]["content"]
+
+
 def test_summary_tool_requires_only_title() -> None:
 	function = GET_SUMMARY_TOOL["function"]
 

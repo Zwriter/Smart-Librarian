@@ -12,6 +12,7 @@ class GoogleBook(BaseModel):
 	description: str | None = None
 	published_date: str | None = None
 	publisher: str | None = None
+	language: str | None = None
 	categories: tuple[str, ...] = ()
 	thumbnail_url: str | None = None
 	isbn_10: str | None = None

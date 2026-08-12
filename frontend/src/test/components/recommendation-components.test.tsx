@@ -12,6 +12,7 @@ test('renders long recommendation metadata without truncation', () => {
         rationale: longRationale,
         published_date: '2024',
         publisher: 'Example Press',
+        language: 'sv',
       }}
     />,
   )
@@ -21,6 +22,7 @@ test('renders long recommendation metadata without truncation', () => {
   expect(within(card).getByText('An Author With A Name That Needs Room To Wrap Gracefully')).toBeVisible()
   expect(within(card).getByText(/Published 2024/)).toBeVisible()
   expect(within(card).getByText('Example Press')).toBeVisible()
+  expect(within(card).getByText('Language: Swedish')).toBeVisible()
   expect(within(card).getByText(longRationale)).toBeVisible()
 })
 

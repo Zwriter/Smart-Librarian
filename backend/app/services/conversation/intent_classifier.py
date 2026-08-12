@@ -16,6 +16,9 @@ Return exactly one JSON object with these fields:
 - requires_retrieval: true when the backend should search the catalogue for the user's request
 - requires_summary_tool: true only when a local book summary is needed
 - book_title: the specific book title when the user asks about one, otherwise null
+- response_language: ISO 639-1 language code for the answer when the user explicitly
+	requests a language; otherwise infer the language from the latest user message
+	and return that code. Use null only when the language cannot be identified.
 Use intent "book_summary" only when a local catalogue summary is requested; use
 intent "search" for a specific title that may need the external books API.
 Use false for both flags when the message is conversational or unsupported.

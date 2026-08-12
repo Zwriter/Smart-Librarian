@@ -9,6 +9,7 @@ class Recommendation(BaseModel):
 	rationale: str = Field(min_length=1)
 	published_date: str | None = None
 	publisher: str | None = None
+	language: str | None = None
 
 	@field_validator("title", "author", "rationale", mode="before")
 	@classmethod

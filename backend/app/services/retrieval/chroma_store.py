@@ -40,6 +40,8 @@ class ChromaVectorStore:
 			raise RetrievalError("Vector store query failed") from error
 
 	def existing_ids(self, ids: Sequence[str]) -> set[str]:
+		if not ids:
+			return set()
 		try:
 			existing = self._collection.get(ids=list(ids)).get("ids", [])
 			return {item for item in existing if isinstance(item, str)}

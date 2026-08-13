@@ -60,6 +60,16 @@ def test_indexer_does_not_embed_when_all_volume_ids_exist() -> None:
 	assert store.upserted is None
 
 
+def test_indexer_ignores_empty_book_results() -> None:
+	llm = FakeLLM()
+	store = FakeStore(set())
+
+	GoogleBooksIndexer(llm, store).index(())
+
+	assert llm.texts == []
+	assert store.upserted is None
+
+
 def test_indexer_deduplicates_duplicate_volume_ids_before_embedding() -> None:
 	llm = FakeLLM()
 	store = FakeStore(set())

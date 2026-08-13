@@ -41,7 +41,7 @@ export function QuestionComposer({
         onChange={(event) => onQuestionChange(event.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="I want a novel that..."
-        maxLength={2000}
+        maxLength={500}
         aria-describedby={error ? (apiError ? 'api-error' : 'question-error') : 'question-count keyboard-hint'}
         aria-invalid={Boolean(error)}
         aria-keyshortcuts="Enter"
@@ -49,7 +49,7 @@ export function QuestionComposer({
         rows={3}
       />
       <div className="composer-footer">
-        <span id="question-count">{question.length.toLocaleString()} / 2,000</span>
+        <span id="question-count">{question.length.toLocaleString()} / 500</span>
         <button className="send-button" type="submit" disabled={isLoading || !question}>
           <span>{isLoading ? 'Searching' : 'Ask librarian'}</span>
           <span className="send-icon" aria-hidden="true">↗</span>

@@ -67,7 +67,7 @@ function App() {
           )}
         </aside>
       </main>
-      <footer>Recommendations are powered by your local book catalogue.</footer>
+      <footer>Recommendations are powered by Google Books.</footer>
     </div>
   )
 }

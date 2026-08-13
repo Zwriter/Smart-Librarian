@@ -29,6 +29,8 @@ class GoogleBooksIndexer:
 
 	def index(self, books: Sequence[GoogleBook]) -> None:
 		unique_books = self._unique_books(books)
+		if not unique_books:
+			return
 		ids = [self._document_id(book) for book in unique_books]
 		existing_ids = self._vector_store.existing_ids(ids)
 		new_books = [

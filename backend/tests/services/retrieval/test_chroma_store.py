@@ -69,6 +69,13 @@ def test_chroma_store_upserts_records_and_reports_existing_ids() -> None:
 	assert collection.upserted["ids"] == ["book-1", "book-2"]
 
 
+def test_chroma_store_returns_no_existing_ids_for_empty_input() -> None:
+	collection = FakeCollection()
+	store = ChromaVectorStore(Path(".chroma"), "books", client=FakeChromaClient(collection))
+
+	assert store.existing_ids([]) == set()
+
+
 def test_noop_chroma_telemetry_does_not_capture_events() -> None:
 	assert NoOpTelemetry.capture is not None
 	NoOpTelemetry.capture(None, None, None)  # type: ignore[arg-type]

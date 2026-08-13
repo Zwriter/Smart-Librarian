@@ -1,6 +1,8 @@
 const { execSync, spawn } = require('node:child_process');
 const readline = require('node:readline');
 
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
 function ask(question) {
   const interface = readline.createInterface({
     input: process.stdin,
@@ -24,17 +26,19 @@ async function main() {
 
   console.clear();
   const answer = await ask('\nAll tests passed. Start the development servers? [Y/n] ');
+
   if (answer && answer !== 'y' && answer !== 'yes') {
     console.log('Development servers were not started.');
     return;
   }
 
-  const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-
-  const servers = spawn(npmCommand, ['run', 'dev:servers'], {
-    stdio: 'inherit',
-    shell: true,
-  });
+  const servers = process.platform === 'win32'
+    ? spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', 'npm run dev:servers'], {
+        stdio: 'inherit',
+      })
+    : spawn('npm', ['run', 'dev:servers'], {
+        stdio: 'inherit',
+      });
 
   process.on('SIGINT', () => servers.kill('SIGINT'));
   process.on('SIGTERM', () => servers.kill('SIGTERM'));

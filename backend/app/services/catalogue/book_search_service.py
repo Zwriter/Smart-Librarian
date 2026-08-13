@@ -28,10 +28,11 @@ class BookSearchService:
 		books = self._google_books_search.search(title, 10)
 
 		requested_title = self._normalize_title(title)
-		matched_book = next(
-			(book for book in books if self._normalize_title(book.title) == requested_title),
-			None,
+		exact_matches = tuple(
+			book for book in books if self._normalize_title(book.title) == requested_title
 		)
+		matched_book = next((book for book in exact_matches if book.language), None)
+		matched_book = matched_book or (exact_matches[0] if exact_matches else None)
 		if matched_book is None:
 			matched_book = next(
 				(
@@ -52,7 +53,16 @@ class BookSearchService:
 			author=", ".join(matched_book.authors) or "Unknown author",
 			summary=matched_book.description or "No description available from Google Books.",
 			description=matched_book.description,
-			metadata={"source": "google_books", "volume_id": matched_book.volume_id},
+			metadata={
+				"source": "google_books",
+				"volume_id": matched_book.volume_id,
+				**(
+					{"published_date": matched_book.published_date}
+					if matched_book.published_date
+					else {}
+				),
+				**({"language": matched_book.language} if matched_book.language else {}),
+			},
 		)
 
 	@staticmethod

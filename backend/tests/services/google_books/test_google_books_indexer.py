@@ -33,6 +33,9 @@ class FakeStore:
 		self.upserted = (ids, documents, embeddings, metadatas)
 		return self.existing
 
+	def update_metadata(self, ids: list[str], metadatas: list[dict[str, str]]) -> None:
+		self.updated = (ids, metadatas)
+
 
 def make_book(volume_id: str) -> GoogleBook:
 	return GoogleBook(volume_id=volume_id, title=f"Book {volume_id}", authors=("Author",))
@@ -79,3 +82,16 @@ def test_indexer_deduplicates_duplicate_volume_ids_before_embedding() -> None:
 	assert len(llm.texts) == 1
 	assert store.upserted is not None
 	assert store.upserted[0] == ["google-volume:new"]
+
+
+def test_indexer_persists_language_metadata() -> None:
+	llm = FakeLLM()
+	store = FakeStore(set())
+	book = make_book("new")
+	book = book.model_copy(update={"language": "en"})
+
+	GoogleBooksIndexer(llm, store).index((book,))
+
+	assert store.upserted is not None
+	assert store.upserted[3][0]["language"] == "en"
+	assert store.upserted[3][0]["summary"] == "No description available from Google Books."

@@ -55,6 +55,47 @@ def test_retriever_embeds_question_and_maps_ranked_books() -> None:
 	assert books[0].relevance_score == 0.5
 
 
+def test_retriever_supports_legacy_metadata_without_summary() -> None:
+	result = {
+		"ids": [["google-volume:dune"]],
+		"documents": [["Title: Dune"]],
+		"metadatas": [[
+			{"title": "Dune", "author": "Frank Herbert", "description": "A desert epic."}
+		]],
+		"distances": [[0.1]],
+	}
+
+	books = Retriever._map_results(result)
+
+	assert books[0].book.summary == "A desert epic."
+
+
+def test_retriever_normalizes_flattened_google_books_metadata() -> None:
+	result = {
+		"ids": [["google-volume:dune"]],
+		"documents": [["Title: Dune"]],
+		"metadatas": [[
+			{
+				"title": "Dune",
+				"author": "Frank Herbert",
+				"description": "A desert epic.",
+				"source": "google_books",
+				"volume_id": "dune",
+				"language": "en",
+			}
+		]],
+		"distances": [[0.1]],
+	}
+
+	books = Retriever._map_results(result)
+
+	assert books[0].book.metadata == {
+		"source": "google_books",
+		"volume_id": "dune",
+		"language": "en",
+	}
+
+
 def test_retriever_returns_empty_tuple_for_empty_collection() -> None:
 	result = {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
 

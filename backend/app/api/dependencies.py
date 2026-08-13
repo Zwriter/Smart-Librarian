@@ -18,6 +18,8 @@ def _build_chat_service() -> "ChatService":
 	from app.services.catalogue.book_search_service import BookSearchService
 	from app.services.catalogue.summary_tool import SummaryTool
 	from app.services.conversation.chat_service import ChatService
+	from app.services.conversation.command_handler import ChatCommandHandler
+	from app.services.conversation.command_parser import ChatCommandParser
 	from app.services.conversation.intent_classifier import IntentClassifier
 	from app.services.llm.llm_client import OpenAIClient
 	from app.services.retrieval.chroma_store import ChromaVectorStore
@@ -42,15 +44,32 @@ def _build_chat_service() -> "ChatService":
 		persist_directory=settings.chroma_persist_directory,
 		collection_name=settings.chroma_collection_name,
 	)
+	retriever = Retriever(llm_client, vector_store, settings.top_k_results)
+	google_books_retriever = Retriever(
+		llm_client,
+		ChromaVectorStore(
+			persist_directory=settings.chroma_persist_directory,
+			collection_name=settings.google_books_collection_name,
+		),
+		settings.top_k_results,
+	)
+	book_search = BookSearchService(book_repository, get_google_books_search_service())
 	return ChatService(
 		input_filter=InputFilter(settings.filter_config_path, settings.max_question_length),
-		retriever=Retriever(llm_client, vector_store, settings.top_k_results),
+		retriever=retriever,
 		llm_client=llm_client,
 		tool_executor=ToolCallExecutor(SummaryTool(book_repository).get_summary_by_title),
 		intent_classifier=IntentClassifier(llm_client),
 		input_safety_validator=InputSafetyValidator(validation_client),
 		google_books_search=get_google_books_search_service(),
-		book_search=BookSearchService(book_repository, get_google_books_search_service()),
+		book_search=book_search,
+		command_parser=ChatCommandParser(),
+		command_handler=ChatCommandHandler(
+			retriever,
+			get_google_books_search_service(),
+			book_search,
+			indexed_retriever=google_books_retriever,
+		),
 	)
 
 

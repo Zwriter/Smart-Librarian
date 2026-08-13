@@ -66,3 +66,15 @@ class ChromaVectorStore:
 			return existing
 		except Exception as error:
 			raise RetrievalError("Vector store upsert failed") from error
+
+	def update_metadata(
+		self,
+		ids: Sequence[str],
+		metadatas: Sequence[dict[str, str]],
+	) -> None:
+		if not ids:
+			return
+		try:
+			self._collection.update(ids=list(ids), metadatas=list(metadatas))
+		except Exception as error:
+			raise RetrievalError("Vector store metadata update failed") from error

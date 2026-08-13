@@ -19,6 +19,8 @@ from app.domain.google_book import GoogleBook
 from app.domain.recommendation import Recommendation
 from app.domain.retrieved_book import RetrievedBook
 from app.services.catalogue.book_search_service import BookSearchService
+from app.services.conversation.command_handler import ChatCommandHandler
+from app.services.conversation.command_parser import ChatCommandParser
 from app.services.conversation.intent_classifier import IntentClassifier
 from app.services.conversation.recommendation_prompt import (
 	GET_SUMMARY_TOOL,
@@ -57,6 +59,8 @@ class ChatService:
 		input_safety_validator: InputSafetyValidator | None = None,
 		google_books_search: GoogleBooksSearch | None = None,
 		book_search: BookSearchService | None = None,
+		command_parser: ChatCommandParser | None = None,
+		command_handler: ChatCommandHandler | None = None,
 	) -> None:
 		self._input_filter = input_filter
 		self._retriever = retriever
@@ -66,6 +70,8 @@ class ChatService:
 		self._input_safety_validator = input_safety_validator
 		self._google_books_search = google_books_search
 		self._book_search = book_search
+		self._command_parser = command_parser
+		self._command_handler = command_handler
 
 	def recommend(self, request: ChatRequest) -> ChatResponse:
 		question = self._input_filter.validate(request.question)
@@ -76,6 +82,10 @@ class ChatService:
 				raise ChatServiceError("Unable to validate chat input") from error
 			if not safety.allowed:
 				return ChatResponse(message=self.SAFETY_REJECTION_MESSAGE)
+		if self._command_parser is not None and self._command_handler is not None:
+			command = self._command_parser.parse(question)
+			if command is not None:
+				return self._command_handler.execute(command)
 		intent: ConversationIntent | None = None
 		if self._intent_classifier is not None:
 			try:

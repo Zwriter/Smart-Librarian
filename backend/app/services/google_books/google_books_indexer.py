@@ -19,6 +19,13 @@ class GoogleBooksIndexStore(Protocol):
 	) -> set[str]:
 		...
 
+	def update_metadata(
+		self,
+		ids: Sequence[str],
+		metadatas: Sequence[dict[str, str]],
+	) -> None:
+		...
+
 
 class GoogleBooksIndexer:
 	"""Embeds and stores new Google Books records in a dedicated collection."""
@@ -33,6 +40,16 @@ class GoogleBooksIndexer:
 			return
 		ids = [self._document_id(book) for book in unique_books]
 		existing_ids = self._vector_store.existing_ids(ids)
+		if existing_ids:
+			existing_books = [
+				book
+				for book, document_id in zip(unique_books, ids, strict=True)
+				if document_id in existing_ids
+			]
+			self._vector_store.update_metadata(
+				[self._document_id(book) for book in existing_books],
+				[self._metadata(book) for book in existing_books],
+			)
 		new_books = [
 			book
 			for book, document_id in zip(unique_books, ids, strict=True)
@@ -86,6 +103,8 @@ class GoogleBooksIndexer:
 			"title": book.title,
 			"author": ", ".join(book.authors),
 			"description": book.description or "",
+			"summary": book.description or "No description available from Google Books.",
 			"published_date": book.published_date or "",
 			"publisher": book.publisher or "",
+			"language": book.language or "",
 		}

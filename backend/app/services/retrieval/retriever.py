@@ -58,7 +58,17 @@ class Retriever:
 				raise RetrievalError("Vector store returned invalid distance")
 
 			try:
-				book = Book.model_validate(metadata)
+				book_metadata = Retriever._normalize_book_metadata(metadata)
+				if "summary" not in book_metadata:
+					description = book_metadata.get("description")
+					book_metadata["summary"] = (
+						description
+						if isinstance(description, str) and description.strip()
+						else "No description available."
+					)
+				if "author" not in book_metadata or not book_metadata["author"]:
+					book_metadata["author"] = "Unknown author"
+				book = Book.model_validate(book_metadata)
 				books.append(
 					RetrievedBook(
 						book=book,
@@ -70,6 +80,30 @@ class Retriever:
 				raise RetrievalError("Vector store returned invalid book metadata") from error
 
 		return tuple(books)
+
+	@staticmethod
+	def _normalize_book_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+		book_fields = {"title", "author", "summary", "description", "metadata"}
+		book_metadata = {
+			key: value for key, value in metadata.items() if key in book_fields
+		}
+		extra_metadata = {
+			key: value
+			for key, value in metadata.items()
+			if key not in book_fields and isinstance(value, str)
+		}
+		existing_metadata = metadata.get("metadata", {})
+		if isinstance(existing_metadata, dict):
+			extra_metadata = {
+				**{
+					key: value
+					for key, value in existing_metadata.items()
+					if isinstance(key, str) and isinstance(value, str)
+				},
+				**extra_metadata,
+			}
+		book_metadata["metadata"] = extra_metadata
+		return book_metadata
 
 	@staticmethod
 	def _read_result_list(result: Mapping[str, Any], key: str) -> list[Any]:

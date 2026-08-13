@@ -17,11 +17,18 @@ class SearchCommand(BaseModel):
 	query: str = Field(min_length=1)
 
 
-class MetadataCommand(BaseModel):
+class GetCommand(BaseModel):
 	model_config = ConfigDict(extra="forbid")
 
-	kind: Literal["year", "author", "language"]
+	kind: Literal["get"]
 	book_title: str = Field(min_length=1)
 
 
-ChatCommand = QueryCommand | SearchCommand | MetadataCommand
+class MetadataCommand(BaseModel):
+	model_config = ConfigDict(extra="forbid")
+
+	kind: Literal["year", "author", "language", "resume", "description"]
+	book_title: str = Field(min_length=1)
+
+
+ChatCommand = QueryCommand | SearchCommand | GetCommand | MetadataCommand

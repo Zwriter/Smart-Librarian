@@ -26,18 +26,43 @@ class GoogleBooksSearchService:
 		exact_title = self._exact_title_query(query)
 		cached_books = self._repository.get(query)
 		if cached_books is not None:
-			cached_matches = self._filter_exact_title(cached_books, exact_title)
+			cached_matches = self._filter_exact_title(
+				self._clean_descriptions(cached_books), exact_title
+			)
 			cache_is_complete = all(book.language is not None for book in cached_matches)
 			if exact_title is None or (cached_matches and cache_is_complete):
 				self._index_best_effort(cached_matches)
 				return cached_matches[:limit]
 
 		provider_limit = max(limit, 10) if exact_title is not None else limit
-		books = self._client.search_volumes(query, provider_limit)
+		books = self._clean_descriptions(self._client.search_volumes(query, provider_limit))
 		self._repository.save(query, books)
 		matched_books = self._filter_exact_title(books, exact_title)
 		self._index_best_effort(matched_books)
 		return matched_books[:limit]
+
+	@staticmethod
+	def _clean_descriptions(books: tuple[GoogleBook, ...]) -> tuple[GoogleBook, ...]:
+		return tuple(
+			book.model_copy(
+				update={
+					"description": GoogleBooksSearchService._clean_description(
+						book.description
+					)
+				}
+			)
+			for book in books
+		)
+
+	@staticmethod
+	def _clean_description(description: str | None) -> str | None:
+		if description is None:
+			return None
+		cleaned = " ".join(description.split()).strip()
+		for prefix in ("Beschreibung", "Description"):
+			if cleaned.casefold().startswith(prefix.casefold() + " "):
+				cleaned = cleaned[len(prefix):].lstrip(" :.-")
+		return cleaned or None
 
 	@classmethod
 	def _filter_exact_title(

@@ -1,6 +1,8 @@
 from app.domain.book import Book
 from app.domain.chat_request import ChatRequest
+from app.domain.conversation_message import ConversationMessage
 from app.domain.google_book import GoogleBook
+from app.domain.input_safety import InputSafetyResult
 from app.domain.retrieved_book import RetrievedBook
 from app.services.conversation.chat_service import ChatService
 from app.services.conversation.command_handler import ChatCommandHandler
@@ -44,7 +46,7 @@ class FakeBookSearch:
 	def __init__(self, book: Book) -> None:
 		self.book = book
 
-	def find_by_title(self, title: str) -> Book:
+	def find_by_title(self, title: str, required_metadata: str | None = None) -> Book:
 		return self.book
 
 
@@ -54,6 +56,9 @@ def test_parser_returns_typed_commands_and_ignores_normal_chat() -> None:
 	assert parser.parse("/query Dune").book_title == "Dune"  # type: ignore[union-attr]
 	assert parser.parse("/search space opera").query == "space opera"  # type: ignore[union-attr]
 	assert parser.parse("/language Dune").kind == "language"  # type: ignore[union-attr]
+	assert parser.parse("/resume Dune").kind == "resume"  # type: ignore[union-attr]
+	assert parser.parse("/description Dune").kind == "description"  # type: ignore[union-attr]
+	assert parser.parse("/get Dune").kind == "get"  # type: ignore[union-attr]
 	assert parser.parse("Recommend a quiet mystery") is None
 
 
@@ -130,6 +135,60 @@ def test_handler_returns_typed_metadata_values() -> None:
 	assert response.message == "Dune year: 1965"
 
 
+def test_handler_returns_resume_description_and_book() -> None:
+	book = make_book()
+	book.description = "A fuller description."
+	handler = ChatCommandHandler(
+		FakeRetriever(()),
+		FakeGoogleBooksSearch(()),  # type: ignore[arg-type]
+		FakeBookSearch(book),  # type: ignore[arg-type]
+	)
+
+	resume = handler.execute(ChatCommandParser().parse("/resume Dune"))  # type: ignore[arg-type]
+	description = handler.execute(ChatCommandParser().parse("/description Dune"))  # type: ignore[arg-type]
+	full_book = handler.execute(ChatCommandParser().parse("/get Dune"))  # type: ignore[arg-type]
+
+	assert resume.message == "Dune resume: A desert epic."
+	assert description.message == "Dune description: A fuller description."
+	assert full_book.message == (
+		"Title: Dune\nAuthor: Frank Herbert\nResume: A desert epic.\n"
+		"Description: A fuller description."
+	)
+
+
+def test_handler_truncates_description_after_forty_words_without_changing_resume() -> None:
+	words = tuple(f"word{index}" for index in range(1, 42))
+	book = make_book()
+	book.description = " ".join(words)
+	handler = ChatCommandHandler(
+		FakeRetriever(()),
+		FakeGoogleBooksSearch(()),  # type: ignore[arg-type]
+		FakeBookSearch(book),  # type: ignore[arg-type]
+	)
+
+	resume = handler.execute(ChatCommandParser().parse("/resume Dune"))  # type: ignore[arg-type]
+	description = handler.execute(ChatCommandParser().parse("/description Dune"))  # type: ignore[arg-type]
+
+	assert resume.message == "Dune resume: A desert epic."
+	assert description.message == (
+		"Dune description: " + " ".join(words[:40]) + "..."
+	)
+
+
+def test_handler_does_not_use_resume_as_description_fallback() -> None:
+	book = make_book()
+	book.description = None
+	handler = ChatCommandHandler(
+		FakeRetriever(()),
+		FakeGoogleBooksSearch(()),  # type: ignore[arg-type]
+		FakeBookSearch(book),  # type: ignore[arg-type]
+	)
+
+	response = handler.execute(ChatCommandParser().parse("/description Dune"))  # type: ignore[arg-type]
+
+	assert response.message == 'I don\'t have description information for "Dune".'
+
+
 def test_chat_service_executes_commands_before_intent_classification() -> None:
 	class FailingClassifier:
 		def classify(self, question, history=()):
@@ -153,3 +212,38 @@ def test_chat_service_executes_commands_before_intent_classification() -> None:
 	response = service.recommend(ChatRequest(question="/author Dune"))
 
 	assert response.message == "Dune author: Frank Herbert"
+
+
+def test_chat_commands_are_not_rejected_by_previous_history_safety_result() -> None:
+	class HistorySensitiveSafety:
+		def validate(self, question, history=()):
+			return InputSafetyResult(
+				allowed=not history,
+				category="allowed" if not history else "profanity",
+				reason=None,
+			)
+
+	book = make_book()
+	service = ChatService(
+		input_filter=type("Filter", (), {"validate": lambda _, question: question})(),  # type: ignore[arg-type]
+		retriever=FakeRetriever(()),  # type: ignore[arg-type]
+		llm_client=object(),  # type: ignore[arg-type]
+		tool_executor=object(),  # type: ignore[arg-type]
+		intent_classifier=None,
+		input_safety_validator=HistorySensitiveSafety(),  # type: ignore[arg-type]
+		command_parser=ChatCommandParser(),
+		command_handler=ChatCommandHandler(
+			FakeRetriever(()),  # type: ignore[arg-type]
+			FakeGoogleBooksSearch(()),  # type: ignore[arg-type]
+			FakeBookSearch(book),  # type: ignore[arg-type]
+		),
+	)
+
+	response = service.recommend(
+		ChatRequest(
+			question="/year Dune",
+			history=[ConversationMessage(role="user", content="unsafe prior text")],
+		)
+	)
+
+	assert response.message == "Dune year: 1965"

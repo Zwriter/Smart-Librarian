@@ -1,14 +1,21 @@
 import re
 from typing import cast
 
-from app.domain.chat_command import ChatCommand, MetadataCommand, QueryCommand, SearchCommand
+from app.domain.chat_command import (
+	ChatCommand,
+	GetCommand,
+	MetadataCommand,
+	QueryCommand,
+	SearchCommand,
+)
 
 
 class ChatCommandParser:
 	"""Parses supported slash commands without involving the language model."""
 
 	_COMMAND_PATTERN = re.compile(
-		r"^/(?P<name>query|search|year|author|language)\s*(?P<value>.*)$", re.I
+		r"^/(?P<name>query|search|get|year|author|language|resume|description)\s*(?P<value>.*)$",
+		re.I,
 	)
 
 	def parse(self, question: str) -> ChatCommand | None:
@@ -24,6 +31,8 @@ class ChatCommandParser:
 			return QueryCommand(kind="query", book_title=value)
 		if name == "search":
 			return SearchCommand(kind="search", query=value)
+		if name == "get":
+			return GetCommand(kind="get", book_title=value)
 		return cast(
 			MetadataCommand,
 			MetadataCommand.model_validate({"kind": name, "book_title": value}),

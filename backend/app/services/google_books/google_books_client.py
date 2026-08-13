@@ -96,7 +96,7 @@ class GoogleBooksApiClient:
 			volume_id=volume.id,
 			title=volume.volume_info.title,
 			authors=tuple(volume.volume_info.authors),
-			description=volume.volume_info.description,
+			description=GoogleBooksApiClient._clean_description(volume.volume_info.description),
 			published_date=volume.volume_info.published_date,
 			publisher=volume.volume_info.publisher,
 			language=volume.volume_info.language,
@@ -105,3 +105,13 @@ class GoogleBooksApiClient:
 			isbn_10=identifiers.get("ISBN_10"),
 			isbn_13=identifiers.get("ISBN_13"),
 		)
+
+	@staticmethod
+	def _clean_description(description: str | None) -> str | None:
+		if description is None:
+			return None
+		cleaned = " ".join(description.split()).strip()
+		for prefix in ("Beschreibung", "Description"):
+			if cleaned.casefold().startswith(prefix.casefold() + " "):
+				cleaned = cleaned[len(prefix):].lstrip(" :.-")
+		return cleaned or None

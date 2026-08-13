@@ -75,17 +75,24 @@ class ChatService:
 
 	def recommend(self, request: ChatRequest) -> ChatResponse:
 		question = self._input_filter.validate(request.question)
+		command = (
+			self._command_parser.parse(question)
+			if self._command_parser is not None and self._command_handler is not None
+			else None
+		)
 		if self._input_safety_validator is not None:
 			try:
-				safety = self._input_safety_validator.validate(question, request.history)
+				safety = self._input_safety_validator.validate(
+					question,
+					() if command is not None else request.history,
+				)
 			except InputSafetyError as error:
 				raise ChatServiceError("Unable to validate chat input") from error
 			if not safety.allowed:
 				return ChatResponse(message=self.SAFETY_REJECTION_MESSAGE)
-		if self._command_parser is not None and self._command_handler is not None:
-			command = self._command_parser.parse(question)
-			if command is not None:
-				return self._command_handler.execute(command)
+		if command is not None:
+			assert self._command_handler is not None
+			return self._command_handler.execute(command)
 		intent: ConversationIntent | None = None
 		if self._intent_classifier is not None:
 			try:

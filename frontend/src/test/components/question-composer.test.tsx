@@ -64,3 +64,30 @@ test('supports keyboard-only focus and submission', async () => {
 
   expect(props.onSubmit).toHaveBeenCalledOnce()
 })
+
+test('shows available commands after typing a slash', () => {
+  const { props } = renderComposer({ question: '/' })
+
+  expect(screen.getByRole('listbox', { name: 'Available commands' })).toBeInTheDocument()
+  expect(screen.getAllByRole('option')).toHaveLength(8)
+  expect(screen.getByRole('option', { name: /\/resume.*show the book resume/i })).toBeInTheDocument()
+  expect(props.onQuestionChange).not.toHaveBeenCalled()
+})
+
+test('filters and selects a command with the keyboard', () => {
+  const { props } = renderComposer({ question: '/de' })
+  const textarea = screen.getByRole('textbox', { name: 'Your question' })
+
+  expect(screen.getAllByRole('option')).toHaveLength(1)
+  fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' })
+
+  expect(props.onQuestionChange).toHaveBeenCalledWith('/description ')
+})
+
+test('selects a command with a pointer click', () => {
+  const { props } = renderComposer({ question: '/' })
+
+  fireEvent.click(screen.getByRole('option', { name: /\/get.*return the book details/i }))
+
+  expect(props.onQuestionChange).toHaveBeenCalledWith('/get ')
+})

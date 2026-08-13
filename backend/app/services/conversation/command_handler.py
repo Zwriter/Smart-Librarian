@@ -3,7 +3,13 @@ from typing import Protocol
 
 from app.core.exceptions import BookNotFoundError, GoogleBooksError
 from app.domain.book import Book
-from app.domain.chat_command import ChatCommand, MetadataCommand, QueryCommand, SearchCommand
+from app.domain.chat_command import (
+	ChatCommand,
+	GetCommand,
+	MetadataCommand,
+	QueryCommand,
+	SearchCommand,
+)
 from app.domain.chat_response import ChatResponse
 from app.domain.google_book import GoogleBook
 from app.domain.retrieved_book import RetrievedBook
@@ -36,6 +42,8 @@ class ChatCommandHandler:
 			return self._query(command)
 		if isinstance(command, SearchCommand):
 			return self._search(command)
+		if isinstance(command, GetCommand):
+			return self._get(command)
 		return self._metadata(command)
 
 	def _query(self, command: QueryCommand) -> ChatResponse:
@@ -61,15 +69,16 @@ class ChatCommandHandler:
 			return ChatResponse(message=f'No Google Books results found for "{command.query}".')
 		return ChatResponse(message=self._format_external_results(books))
 
+	def _get(self, command: GetCommand) -> ChatResponse:
+		book = self._find_book(command.book_title)
+		if isinstance(book, ChatResponse):
+			return book
+		return ChatResponse(message=self._format_book(book))
+
 	def _metadata(self, command: MetadataCommand) -> ChatResponse:
-		try:
-			book = self._book_search.find_by_title(command.book_title)
-		except BookNotFoundError:
-			return ChatResponse(message=f'I couldn\'t find "{command.book_title}".')
-		except GoogleBooksError:
-			return ChatResponse(
-				message="I couldn't look up that book right now. Please try again shortly."
-			)
+		book = self._find_book(command.book_title, command.kind)
+		if isinstance(book, ChatResponse):
+			return book
 
 		value = self._metadata_value(book, command.kind)
 		if value is None:
@@ -78,6 +87,16 @@ class ChatCommandHandler:
 			)
 		return ChatResponse(message=f"{book.title} {command.kind}: {value}")
 
+	def _find_book(self, title: str, required_metadata: str | None = None) -> Book | ChatResponse:
+		try:
+			return self._book_search.find_by_title(title, required_metadata)
+		except BookNotFoundError:
+			return ChatResponse(message=f'I couldn\'t find "{title}".')
+		except GoogleBooksError:
+			return ChatResponse(
+				message="I couldn't look up that book right now. Please try again shortly."
+			)
+
 	@staticmethod
 	def _metadata_value(book: Book, kind: str) -> str | None:
 		metadata = book.metadata
@@ -85,7 +104,29 @@ class ChatCommandHandler:
 			return book.author
 		if kind == "year":
 			return metadata.get("year") or metadata.get("published_date")
-		return metadata.get("language")
+		if kind == "language":
+			return metadata.get("language")
+		if kind == "resume":
+			return book.summary
+		if kind == "description":
+			if book.description is None:
+				return None
+			return ChatCommandHandler._truncate_description(book.description)
+		return None
+
+	@staticmethod
+	def _truncate_description(description: str, word_limit: int = 40) -> str:
+		words = description.split()
+		if len(words) <= word_limit:
+			return description
+		return f"{' '.join(words[:word_limit])}..."
+
+	@staticmethod
+	def _format_book(book: Book) -> str:
+		lines = [f"Title: {book.title}", f"Author: {book.author}", f"Resume: {book.summary}"]
+		if book.description:
+			lines.append(f"Description: {book.description}")
+		return "\n".join(lines)
 
 	@staticmethod
 	def _format_local_results(books: Sequence[RetrievedBook]) -> str:

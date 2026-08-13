@@ -45,6 +45,30 @@ def test_search_volumes_maps_google_payload() -> None:
 	assert books[0].language == "en"
 
 
+def test_search_volumes_removes_provider_description_label() -> None:
+	def handler(_request: httpx.Request) -> httpx.Response:
+		return httpx.Response(
+			200,
+			json={
+				"items": [{
+					"id": "little-prince",
+					"volumeInfo": {
+						"title": "The Little Prince",
+						"description": "Beschreibung I ask the indulgence of the children.",
+					},
+				}],
+			},
+		)
+
+	client = GoogleBooksApiClient(
+		client=httpx.Client(transport=httpx.MockTransport(handler))
+	)
+
+	books = client.search_volumes("The Little Prince", 1)
+
+	assert books[0].description == "I ask the indulgence of the children."
+
+
 def test_search_volumes_wraps_provider_errors() -> None:
 	def handler(_request: httpx.Request) -> httpx.Response:
 		return httpx.Response(503)

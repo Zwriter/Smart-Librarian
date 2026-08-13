@@ -52,6 +52,23 @@ def test_search_returns_cached_results_without_calling_provider() -> None:
 	assert client.calls == []
 
 
+def test_search_cleans_provider_labels_from_cached_descriptions() -> None:
+	client = FakeClient(())
+	repository = FakeRepository(
+		(
+			GoogleBook(
+				volume_id="cached",
+				title="The Little Prince",
+				description="Beschreibung A poetic tale.",
+			),
+		)
+	)
+
+	result = GoogleBooksSearchService(client, repository).search("The Little Prince", 10)
+
+	assert result[0].description == "A poetic tale."
+
+
 def test_search_repairs_missing_index_for_cached_results() -> None:
 	client = FakeClient(())
 	repository = FakeRepository((make_book("cached"),))

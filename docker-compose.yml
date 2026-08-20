@@ -11,6 +11,7 @@ services:
       BOOK_DATA_PATH: /app/data/book_summaries.json
       CHROMA_PERSIST_DIRECTORY: /app/.chroma
       FILTER_CONFIG_PATH: /app/data/filter_config.json
+      GOOGLE_BOOKS_CACHE_PATH: /app/.google_books_cache.sqlite3
       LOG_FILE_PATH: /app/logs/app.log
       CORS_ALLOWED_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173","http://localhost:8080","http://127.0.0.1:8080"]'
     ports:

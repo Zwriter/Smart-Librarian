@@ -7,6 +7,7 @@
   .section-heading { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
   .conversation { min-height: 220px; max-height: min(520px, 48vh); }
   .message { max-width: 92%; }
+  .message.assistant .message-content { font-size: 1rem; }
   .composer-footer { gap: 12px; flex-wrap: wrap; }
   .composer-footer .send-button { margin-left: auto; }
 }

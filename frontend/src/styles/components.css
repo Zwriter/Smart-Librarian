@@ -19,12 +19,16 @@
 .book-mark { display: block; margin-bottom: 18px; color: var(--accent); font-size: 2rem; }
 .empty-state p { margin-bottom: 18px; font: 500 1.35rem/1.3 'Fraunces', Georgia, serif; }
 .prompt-hint { color: var(--muted); font-size: 0.85rem; }
-.message { max-width: 82%; margin: 0 0 22px; padding: 16px 18px; animation: reveal 0.35s ease both; }
-.message p { max-width: 100%; margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+.message { position: relative; max-width: 82%; margin: 0 0 22px; padding: 17px 19px 18px; animation: reveal 0.35s ease both; }
+.message p { max-width: 100%; margin: 9px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+.message-content { color: inherit; font-size: 0.95rem; line-height: 1.65; }
 .message-role { display: block; }
-.message.user { margin-left: auto; color: #fff; background: var(--ink); }
+.message.user { margin-left: auto; color: #fff; background: var(--ink); box-shadow: 4px 4px 0 var(--accent-soft); }
 .message.user .message-role { color: #d8cec0; }
-.message.assistant { border-left: 2px solid var(--accent); background: var(--surface); box-shadow: 0 1px 0 rgba(40, 35, 31, 0.04); }
+.message.user .message-content { color: #fffaf3; }
+.message.assistant { padding-left: 23px; border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--surface); box-shadow: 0 8px 22px rgba(40, 35, 31, 0.06); }
+.message.assistant .message-role { color: var(--accent); }
+.message.assistant .message-content { color: var(--ink-soft); font-family: 'Fraunces', Georgia, serif; font-size: 1.08rem; line-height: 1.55; }
 .loading-slot { min-height: 48px; }
 .loading { padding: 14px 0; color: var(--accent); font: 500 0.8rem 'DM Mono', monospace; }
 .loading span { display: inline-block; width: 24px; overflow: hidden; animation: dots 1.1s steps(4, end) infinite; vertical-align: bottom; }
@@ -64,3 +68,6 @@ textarea:focus { border-bottom: 2px solid var(--accent); box-shadow: var(--shado
 .result-placeholder { color: var(--muted); }
 .result-placeholder span { display: block; height: 64px; color: var(--accent); font: 5rem/1 'Fraunces', Georgia, serif; }
 .result-placeholder p { max-width: 270px; font: 1.25rem/1.35 'Fraunces', Georgia, serif; }
+.result-note { position: relative; margin-top: 8px; padding: 26px 0 28px; border-top: 2px solid var(--accent); border-bottom: 1px solid var(--line); }
+.result-note::before { display: block; margin-bottom: 17px; color: var(--muted); content: 'CATALOGUE NOTE'; font: 500 0.7rem/1.3 'DM Mono', monospace; letter-spacing: 0.08em; }
+.result-note p { max-width: none; margin: 0; color: var(--ink-soft); font: 500 1.08rem/1.65 'Manrope', sans-serif; white-space: pre-line; }

@@ -55,7 +55,7 @@ function App() {
           {chat.response?.message ? (
             <>
               {chat.response.recommendations && <RecommendationOptions recommendations={chat.response.recommendations} />}
-              <div className="result-placeholder"><p>{chat.response.message}</p></div>
+              <div className="result-placeholder result-note"><p>{chat.response.message}</p></div>
             </>
           ) : chat.response?.recommendation && chat.response.summary ? (
             <>

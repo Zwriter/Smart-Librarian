@@ -34,6 +34,15 @@ The normal recommendation path is:
 7. The summary tool resolves complete summaries from the local catalogue.
 8. The API returns the response with an `X-Correlation-ID`.
 
+The chat slash commands use separate catalogue paths:
+
+- `/query <text>` is an embedding-debug command. It searches only the existing
+  local and indexed Chroma collections and returns `Book Not Found` when no
+  result meets the relevance threshold. It never calls Google Books.
+- `/search <text>` searches those embedded collections first. If no relevant
+  embedded result exists, it calls Google Books; returned books are cached and
+  embedded by the Google Books search service for later queries.
+
 ## Repository Layout
 
 ```text

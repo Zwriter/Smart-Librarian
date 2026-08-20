@@ -25,6 +25,8 @@ class GoogleBooksSearch(Protocol):
 class ChatCommandHandler:
 	"""Executes read-only chat commands against catalogue services."""
 
+	_MIN_QUERY_RELEVANCE = 0.40
+
 	def __init__(
 		self,
 		retriever: Retriever,
@@ -47,18 +49,17 @@ class ChatCommandHandler:
 		return self._metadata(command)
 
 	def _query(self, command: QueryCommand) -> ChatResponse:
-		books = self._retriever.retrieve(command.book_title)
-		if self._indexed_retriever is not None:
-			indexed_books = self._indexed_retriever.retrieve(command.book_title)
-			books = (*indexed_books, *books)
-		books = self._unique_results(books)
+		books = self._retrieve_embedded_books(command.book_title)
 		if not books:
 			return ChatResponse(
-				message=f'No local catalogue entries found for "{command.book_title}".'
+				message=f'Book Not Found: "{command.book_title}".'
 			)
 		return ChatResponse(message=self._format_local_results(books))
 
 	def _search(self, command: SearchCommand) -> ChatResponse:
+		books = self._retrieve_embedded_books(command.query)
+		if books:
+			return ChatResponse(message=self._format_local_results(books))
 		try:
 			books = self._google_books_search.search(command.query, 10)
 		except GoogleBooksError:
@@ -66,8 +67,24 @@ class ChatCommandHandler:
 				message="I couldn't search Google Books right now. Please try again shortly."
 			)
 		if not books:
-			return ChatResponse(message=f'No Google Books results found for "{command.query}".')
+			return ChatResponse(message=f'Book Not Found: "{command.query}".')
 		return ChatResponse(message=self._format_external_results(books))
+
+	def _retrieve_embedded_books(self, query: str) -> tuple[RetrievedBook, ...]:
+		semantic_books = list(self._retriever.retrieve(query))
+		if self._indexed_retriever is not None:
+			semantic_books.extend(self._indexed_retriever.retrieve(query))
+		return self._unique_results(
+			[
+				book
+				for book in sorted(
+				semantic_books,
+				key=lambda candidate: candidate.relevance_score,
+				reverse=True,
+			)
+			if book.relevance_score >= self._MIN_QUERY_RELEVANCE
+			]
+		)
 
 	def _get(self, command: GetCommand) -> ChatResponse:
 		book = self._find_book(command.book_title)
@@ -138,7 +155,8 @@ class ChatCommandHandler:
 	def _unique_results(books: Sequence[RetrievedBook]) -> tuple[RetrievedBook, ...]:
 		unique: dict[str, RetrievedBook] = {}
 		for book in books:
-			unique.setdefault(book.document_id, book)
+			key = BookSearchService._normalize_title(book.book.title)
+			unique.setdefault(key, book)
 		return tuple(unique.values())
 
 	@staticmethod

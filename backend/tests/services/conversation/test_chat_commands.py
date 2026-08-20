@@ -1,3 +1,4 @@
+from app.core.exceptions import BookNotFoundError
 from app.domain.book import Book
 from app.domain.chat_request import ChatRequest
 from app.domain.conversation_message import ConversationMessage
@@ -45,8 +46,10 @@ class FakeGoogleBooksSearch:
 class FakeBookSearch:
 	def __init__(self, book: Book) -> None:
 		self.book = book
+		self.titles: list[str] = []
 
 	def find_by_title(self, title: str, required_metadata: str | None = None) -> Book:
+		self.titles.append(title)
 		return self.book
 
 
@@ -75,6 +78,79 @@ def test_handler_queries_local_retrieval() -> None:
 
 	assert response.message == "Embedded catalogue results:\n- Dune by Frank Herbert"
 	assert retriever.questions == ["Dune"]
+
+
+def test_handler_queries_embeddings_and_keeps_relevant_results() -> None:
+	exact_book = make_book("Outlander")
+	related_book = make_book("The Time Traveler's Wife")
+	unrelated_book = make_book("The Little Prince")
+	book_search = FakeBookSearch(make_book("Unused title lookup"))
+	retriever = FakeRetriever(
+		(
+			RetrievedBook(book=exact_book, document_id="outlander", relevance_score=1.0),
+			RetrievedBook(
+				book=unrelated_book, document_id="little-prince", relevance_score=0.2
+			),
+			RetrievedBook(
+				book=related_book, document_id="time-travelers-wife", relevance_score=0.8
+			),
+		)
+	)
+	handler = ChatCommandHandler(
+		retriever,  # type: ignore[arg-type]
+		FakeGoogleBooksSearch(()),  # type: ignore[arg-type]
+		book_search,  # type: ignore[arg-type]
+	)
+
+	response = handler.execute(ChatCommandParser().parse("/query Outlander"))  # type: ignore[arg-type]
+
+	assert response.message == (
+		"Embedded catalogue results:\n"
+		"- Outlander by Frank Herbert\n"
+		"- The Time Traveler's Wife by Frank Herbert"
+	)
+	assert book_search.titles == []
+
+
+def test_handler_keeps_semantic_results_when_exact_title_is_missing() -> None:
+	class MissingBookSearch:
+		def find_by_title(self, title: str, required_metadata: str | None = None) -> Book:
+			raise BookNotFoundError(title)
+
+	related_book = make_book("The Time Traveler's Wife")
+	handler = ChatCommandHandler(
+		FakeRetriever(
+			(
+				RetrievedBook(
+					book=related_book,
+					document_id="time-travelers-wife",
+					relevance_score=0.8,
+				),
+			)
+		),  # type: ignore[arg-type]
+		FakeGoogleBooksSearch(()),  # type: ignore[arg-type]
+		MissingBookSearch(),  # type: ignore[arg-type]
+	)
+
+	response = handler.execute(ChatCommandParser().parse("/query Unknown Romance"))  # type: ignore[arg-type]
+
+	assert response.message == (
+		"Embedded catalogue results:\n- The Time Traveler's Wife by Frank Herbert"
+	)
+
+
+def test_handler_returns_book_not_found_without_calling_google_books() -> None:
+	google = FakeGoogleBooksSearch(())
+	handler = ChatCommandHandler(
+		FakeRetriever(()),  # type: ignore[arg-type]
+		google,  # type: ignore[arg-type]
+		FakeBookSearch(make_book()),  # type: ignore[arg-type]
+	)
+
+	response = handler.execute(ChatCommandParser().parse("/query Unknown"))  # type: ignore[arg-type]
+
+	assert response.message == 'Book Not Found: "Unknown".'
+	assert google.queries == []
 
 
 def test_handler_queries_google_books_embeddings_when_available() -> None:
@@ -121,6 +197,34 @@ def test_handler_searches_google_books() -> None:
 
 	assert response.message == "Google Books results:\n- Dune by Frank Herbert (1965)"
 	assert google.queries == [("Dune", 10)]
+
+
+def test_handler_search_returns_embedded_results_before_google_books() -> None:
+	google = FakeGoogleBooksSearch(
+		(
+			GoogleBook(
+				volume_id="external-dune",
+				title="Dune",
+				authors=("Frank Herbert",),
+			),
+		)
+	)
+	handler = ChatCommandHandler(
+		FakeRetriever(
+			(
+				RetrievedBook(
+					book=make_book(), document_id="dune", relevance_score=0.9
+				),
+			)
+		),  # type: ignore[arg-type]
+		google,  # type: ignore[arg-type]
+		FakeBookSearch(make_book()),  # type: ignore[arg-type]
+	)
+
+	response = handler.execute(ChatCommandParser().parse("/search Dune"))  # type: ignore[arg-type]
+
+	assert response.message == "Embedded catalogue results:\n- Dune by Frank Herbert"
+	assert google.queries == []
 
 
 def test_handler_returns_typed_metadata_values() -> None:

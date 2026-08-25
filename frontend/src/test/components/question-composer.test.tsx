@@ -68,7 +68,11 @@ test('supports keyboard-only focus and submission', async () => {
 test('shows available commands after typing a slash', () => {
   const { props } = renderComposer({ question: '/' })
 
-  expect(screen.getByRole('listbox', { name: 'Available commands' })).toBeInTheDocument()
+  const commandHints = screen.getByRole('listbox', { name: 'Available commands' })
+  const textarea = screen.getByRole('textbox', { name: 'Your question' })
+
+  expect(commandHints).toBeInTheDocument()
+  expect(commandHints.compareDocumentPosition(textarea) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   expect(screen.getAllByRole('option')).toHaveLength(8)
   expect(screen.getByRole('option', { name: /\/resume.*show the book resume/i })).toBeInTheDocument()
   expect(props.onQuestionChange).not.toHaveBeenCalled()

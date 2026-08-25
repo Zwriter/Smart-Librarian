@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { ApiError } from './ApiError'
+import { frontendConfig } from '../config'
 
 const COMMANDS = [
   { name: 'query', description: 'Search the indexed catalogue' },
@@ -83,43 +84,45 @@ export function QuestionComposer({
   return (
     <form className="composer" aria-label="Question composer" onSubmit={handleSubmit}>
       <label htmlFor="question">Your question</label>
-      <textarea
-        id="question"
-        value={question}
-        onChange={(event) => onQuestionChange(event.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="I want a novel that..."
-        maxLength={500}
-        aria-describedby={error ? (apiError ? 'api-error' : 'question-error') : 'question-count keyboard-hint'}
-        aria-invalid={Boolean(error)}
-        aria-keyshortcuts="Enter"
-        disabled={isLoading}
-        rows={3}
-        aria-controls={showCommandHints ? commandListId : undefined}
-        aria-expanded={showCommandHints}
-        aria-autocomplete="list"
-      />
-      {showCommandHints && (
-        <div className="command-hints" id={commandListId} role="listbox" aria-label="Available commands">
-          <span className="command-hints-label">Commands</span>
-          {commandSuggestions.map((command, index) => (
-            <button
-              className={`command-hint${index === highlightedCommand ? ' is-highlighted' : ''}`}
-              key={command.name}
-              type="button"
-              role="option"
-              aria-selected={index === highlightedCommand}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => selectCommand(command.name)}
-            >
-              <strong>/{command.name}</strong>
-              <span>{command.description}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="composer-input-area">
+        {showCommandHints && (
+          <div className="command-hints" id={commandListId} role="listbox" aria-label="Available commands">
+            <span className="command-hints-label">Commands</span>
+            {commandSuggestions.map((command, index) => (
+              <button
+                className={`command-hint${index === highlightedCommand ? ' is-highlighted' : ''}`}
+                key={command.name}
+                type="button"
+                role="option"
+                aria-selected={index === highlightedCommand}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => selectCommand(command.name)}
+              >
+                <strong>/{command.name}</strong>
+                <span>{command.description}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <textarea
+          id="question"
+          value={question}
+          onChange={(event) => onQuestionChange(event.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="I want a novel that..."
+          maxLength={frontendConfig.maxQuestionLength}
+          aria-describedby={error ? (apiError ? 'api-error' : 'question-error') : 'question-count keyboard-hint'}
+          aria-invalid={Boolean(error)}
+          aria-keyshortcuts="Enter"
+          disabled={isLoading}
+          rows={3}
+          aria-controls={showCommandHints ? commandListId : undefined}
+          aria-expanded={showCommandHints}
+          aria-autocomplete="list"
+        />
+      </div>
       <div className="composer-footer">
-        <span id="question-count">{question.length.toLocaleString()} / 500</span>
+        <span id="question-count">{question.length.toLocaleString()} / {frontendConfig.maxQuestionLength.toLocaleString()}</span>
         <button className="send-button" type="submit" disabled={isLoading || !question}>
           <span>{isLoading ? 'Searching' : 'Ask librarian'}</span>
           <span className="send-icon" aria-hidden="true">↗</span>

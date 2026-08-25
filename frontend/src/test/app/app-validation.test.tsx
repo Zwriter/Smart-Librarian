@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import App from '../../App'
+import { frontendConfig } from '../../config'
 import { createChatServer } from './appTestServer'
 
 const chatServer = createChatServer()
@@ -27,7 +28,7 @@ test('shows feedback and skips the API for a whitespace-only question', async ()
   expect(requestCount).toBe(0)
 })
 
-test('rejects questions over 2,000 characters without sending them', async () => {
+test('rejects questions over the configured character limit without sending them', async () => {
   let requestCount = 0
   chatServer.use(http.post('http://127.0.0.1:8000/chat', () => {
     requestCount += 1
@@ -36,10 +37,10 @@ test('rejects questions over 2,000 characters without sending them', async () =>
 
   render(<App />)
   const questionInput = screen.getByLabelText('Your question')
-  fireEvent.change(questionInput, { target: { value: 'x'.repeat(2_001) } })
+  fireEvent.change(questionInput, { target: { value: 'x'.repeat(frontendConfig.maxQuestionLength + 1) } })
   await userEvent.setup().click(screen.getByRole('button', { name: /ask librarian/i }))
 
-  expect(screen.getByRole('alert')).toHaveTextContent('2,000 characters or fewer')
+  expect(screen.getByRole('alert')).toHaveTextContent(`${frontendConfig.maxQuestionLength.toLocaleString()} characters or fewer`)
   expect(questionInput).toHaveAttribute('aria-invalid', 'true')
   expect(questionInput).toHaveAttribute('aria-describedby', 'question-error')
   expect(requestCount).toBe(0)

@@ -60,7 +60,7 @@ The API URL is embedded into the static bundle at build time; changing it requir
 
 ## Configuration
 
-The frontend reads Vite environment variables at build and development-server startup. Set `VITE_API_BASE_URL` when the backend is not using its default URL:
+The frontend reads Vite environment variables from the repository root `.env` at build and development-server startup. Set `VITE_API_BASE_URL` when the backend is not using its default URL:
 
 ```powershell
 $env:VITE_API_BASE_URL = "http://127.0.0.1:8001"
@@ -71,9 +71,12 @@ Alternatively, create `frontend/.env.local`:
 
 ```dotenv
 VITE_API_BASE_URL=http://127.0.0.1:8000
+VITE_MAX_QUESTION_LENGTH=500
+VITE_MAX_HISTORY_MESSAGES=20
 ```
 
 Use the backend origin only, without the `/chat` path or a trailing slash. The client appends `/chat` to this value. Do not put `OPENAI_API_KEY` or any other secret in a `VITE_` variable: Vite exposes `VITE_` values to browser code.
+`VITE_MAX_QUESTION_LENGTH` and `VITE_MAX_HISTORY_MESSAGES` control the corresponding browser limits. Keep these aligned with the backend `MAX_QUESTION_LENGTH` and `MAX_HISTORY_MESSAGES` values.
 
 ## Frontend-backend communication
 

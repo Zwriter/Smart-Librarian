@@ -1,10 +1,8 @@
 import { useRef, useState } from 'react'
 import { sendChatRequest } from '../services/chatApi'
+import { frontendConfig } from '../config'
 import type { ChatResponse, ConversationMessage } from '../types/api'
 import type { ErrorState, RequestStatus } from '../types/ui'
-
-const MAX_HISTORY_MESSAGES = 20
-const MAX_QUESTION_LENGTH = 2_000
 
 export function useChat() {
   const [messages, setMessages] = useState<ConversationMessage[]>([])
@@ -29,7 +27,7 @@ export function useChat() {
 
     requestInFlight.current = true
     if (appendUserMessage) {
-      setMessages((current) => [...current, { role: 'user' as const, content: nextQuestion }].slice(-MAX_HISTORY_MESSAGES))
+      setMessages((current) => [...current, { role: 'user' as const, content: nextQuestion }].slice(-frontendConfig.maxHistoryMessages))
     }
     setQuestion('')
     setValidationError(null)
@@ -50,7 +48,7 @@ export function useChat() {
               : result.message
             : `${result.recommendation?.title}: ${result.recommendation?.rationale}`,
         },
-      ].slice(-MAX_HISTORY_MESSAGES))
+      ].slice(-frontendConfig.maxHistoryMessages))
       setStatus('success')
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : 'Something went wrong. Please try again.'
@@ -74,8 +72,8 @@ export function useChat() {
       setStatus('error')
       return
     }
-    if (trimmedQuestion.length > MAX_QUESTION_LENGTH) {
-      setValidationError('Questions must be 2,000 characters or fewer.')
+    if (trimmedQuestion.length > frontendConfig.maxQuestionLength) {
+      setValidationError(`Questions must be ${frontendConfig.maxQuestionLength.toLocaleString()} characters or fewer.`)
       setApiError(null)
       setStatus('error')
       return
@@ -83,7 +81,7 @@ export function useChat() {
 
     const history = messages
       .filter((message) => message.role === 'user' || message.role === 'assistant')
-      .slice(-(MAX_HISTORY_MESSAGES - 1))
+      .slice(-(frontendConfig.maxHistoryMessages - 1))
     await executeRequest(trimmedQuestion, history, true)
   }
 

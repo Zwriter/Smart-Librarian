@@ -7,8 +7,8 @@ The Compose stack builds the FastAPI backend and Nginx frontend. It waits for th
 From the repository root:
 
 ```powershell
-Copy-Item .env.example .env
-# Set OPENAI_API_KEY in .env before starting the stack.
+Copy-Item backend/.env.example backend/.env
+# Set OPENAI_API_KEY in backend/.env before starting the stack.
 docker compose up --build
 ```
 
@@ -16,7 +16,7 @@ The application is available at `http://localhost:8080/`. The API is available a
 
 ## Configuration
 
-The root `.env` supplies runtime secrets and provider settings to the backend. Compose overrides container paths and local browser origins:
+The backend `.env` supplies runtime secrets and provider settings to the backend. The root `.env` is reserved for shared browser-safe `VITE_*` settings. Compose overrides container paths and local browser origins:
 
 - `BOOK_DATA_PATH=/app/data/book_summaries.json`
 - `FILTER_CONFIG_PATH=/app/data/filter_config.json`

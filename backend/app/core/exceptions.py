@@ -42,5 +42,9 @@ class GoogleBooksError(RuntimeError):
 	"""Raised when the Google Books provider cannot return valid data."""
 
 
+class AuthPersistenceError(RuntimeError):
+	"""Raised when private authentication data cannot be persisted safely."""
+
+
 class ChatServiceError(RuntimeError):
 	"""Raised when recommendation orchestration cannot produce a response."""

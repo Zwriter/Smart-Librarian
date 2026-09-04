@@ -1,10 +1,18 @@
 	{
 		"blocked_terms": [
 			"ignore previous instructions",
+			"ignore prior instructions",
+			"disregard previous instructions",
+			"forget previous instructions",
 			"reveal the system prompt",
+			"reveal the developer prompt",
+			"reveal hidden instructions",
 			"jailbreak"
 		],
 		"blocked_patterns": [
-			"\\b(?:system|developer)\\s+prompt\\b"
+			"\\b(?:system|developer)\\s+(?:prompt|message|instructions?)\\b",
+			"\\b(?:pretend|act|roleplay)\\s+(?:to\\s+)?be\\s+(?:my|a|an|the)\\b",
+			"\\b(?:you\\s+are\\s+now|assume\\s+the\\s+role\\s+of)\\b",
+			"\\b(?:ignore|disregard|forget)\\s+(?:all\\s+)?(?:the\\s+)?(?:previous|prior|above)\\s+(?:instructions?|rules?|messages?)\\b"
 		]
 	}

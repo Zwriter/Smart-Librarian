@@ -10,10 +10,10 @@ FastAPI backend for semantic book recommendations. The service owns book ingesti
 
 ## Quick Start
 
-From the repository root, create `.env` from the provided template and set a real `OPENAI_API_KEY`:
+From the repository root, create `backend/.env` from the provided template and set a real `OPENAI_API_KEY`:
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item backend/.env.example backend/.env
 ```
 
 Then open a terminal in `backend` and create the backend virtual environment:
@@ -55,7 +55,7 @@ python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 
 ## Configuration
 
-The application loads `.env` from the repository root or from `backend/.env`. The most important settings are:
+The application loads backend settings from `backend/.env`. Shared browser-safe `VITE_*` settings belong in the root `.env` and are consumed by the frontend only. The most important backend settings are:
 
 | Setting | Purpose | Default |
 | --- | --- | --- |
@@ -89,7 +89,7 @@ Keep `CORS_ALLOWED_ORIGINS` explicit in production. Wildcard `*` is rejected by 
 
 `OPENAI_API_KEY` is loaded at runtime from environment configuration. It is not copied into the Docker image, committed to Git, written to application logs, returned in API responses, or included in the Docker build context. The backend `.dockerignore` excludes `.env`, secret files, keys, certificates, virtual environments, logs, and local Chroma data.
 
-For local Docker Compose, keep the key in the untracked root `.env` file. For production, inject it through the deployment platform's secret manager or runtime environment rather than placing it in a Dockerfile, Compose `environment` value, source file, or image layer. Do not run `docker compose config` in shared output because rendered configuration can include environment values.
+For local Docker Compose, keep the key in the untracked `backend/.env` file. For production, inject it through the deployment platform's secret manager or runtime environment rather than placing it in a Dockerfile, Compose `environment` value, source file, or image layer. Do not run `docker compose config` in shared output because rendered configuration can include environment values.
 
 If a key is ever committed, pasted into a ticket, or exposed in a build log, revoke it and create a replacement immediately.
 
@@ -121,7 +121,7 @@ The command requires a configured OpenAI key and a writable Chroma directory. In
 
 ## Docker Compose
 
-From the repository root, configure `.env` and run:
+From the repository root, configure `backend/.env` and run:
 
 ```powershell
 docker compose up --build

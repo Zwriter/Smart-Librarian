@@ -10,7 +10,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 class Settings(BaseSettings):
 	model_config = SettingsConfigDict(
-		env_file=(BACKEND_ROOT.parent / ".env", BACKEND_ROOT / ".env"),
+		env_file=BACKEND_ROOT / ".env",
 		env_file_encoding="utf-8",
 		extra="ignore",
 		case_sensitive=False,
@@ -29,6 +29,32 @@ class Settings(BaseSettings):
 	google_books_max_results: int = Field(default=10, gt=0, le=40)
 	google_books_cache_path: Path = BACKEND_ROOT / ".google_books_cache.sqlite3"
 	google_books_collection_name: str = Field(default="google_books", min_length=1)
+	google_oauth_client_id: str | None = None
+	google_oauth_client_secret: SecretStr | None = None
+	google_oauth_redirect_uri: str = Field(
+		default="http://localhost:8000/auth/google/callback",
+		min_length=1,
+	)
+	google_oauth_frontend_redirect_uri: str = Field(
+		default="http://localhost:5173",
+		min_length=1,
+	)
+	google_oauth_identity_scopes: list[str] = Field(
+		default_factory=lambda: [
+			"openid",
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+		]
+	)
+	google_oauth_books_scope: str = "https://www.googleapis.com/auth/books"
+	google_books_library_shelf: str = Field(default="0", min_length=1)
+	auth_database_path: Path = BACKEND_ROOT / ".auth.sqlite3"
+	auth_session_cookie_name: str = Field(default="smart_librarian_session", min_length=1)
+	auth_session_ttl_seconds: int = Field(default=86_400, gt=0)
+	auth_oauth_transaction_ttl_seconds: int = Field(default=600, gt=0)
+	auth_cookie_secure: bool = False
+	auth_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
+	auth_encryption_key: SecretStr | None = None
 	chroma_persist_directory: Path = BACKEND_ROOT / ".chroma"
 	chroma_collection_name: str = Field(default="books", min_length=1)
 	book_data_path: Path = BACKEND_ROOT / "data" / "book_summaries.json"
@@ -59,6 +85,7 @@ class Settings(BaseSettings):
 		"book_data_path",
 		"filter_config_path",
 		"google_books_cache_path",
+		"auth_database_path",
 		"log_file_path",
 		mode="before",
 	)
@@ -78,11 +105,17 @@ class Settings(BaseSettings):
 		"google_books_base_url",
 		"google_books_collection_name",
 		"chroma_collection_name",
+		"google_oauth_client_id",
+		"google_oauth_redirect_uri",
+		"google_oauth_frontend_redirect_uri",
+		"google_oauth_books_scope",
+		"google_books_library_shelf",
+		"auth_session_cookie_name",
 		mode="before",
 	)
 	@classmethod
-	def strip_text_values(cls, value: str) -> str:
-		return value.strip()
+	def strip_text_values(cls, value: str | None) -> str | None:
+		return value.strip() if value is not None else None
 
 	@field_validator("cors_allowed_origins", mode="before")
 	@classmethod

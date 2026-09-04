@@ -199,6 +199,7 @@ def create_app(
 				"correlation_id": get_correlation_id(),
 				"failure_type": type(_error).__name__,
 			},
+			exc_info=True,
 		)
 		return JSONResponse(
 			status_code=502,

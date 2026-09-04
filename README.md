@@ -29,10 +29,10 @@ The chatbox can:
 - npm 10+
 - An OpenAI API key
 
-Create the local environment file from the template and set `OPENAI_API_KEY`:
+Create the backend environment file from the template and set `OPENAI_API_KEY`:
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item backend/.env.example backend/.env
 ```
 
 Install dependencies once:
@@ -64,10 +64,10 @@ Set-Location backend
 
 ## Docker Compose
 
-Configure `.env` with `OPENAI_API_KEY`, then run from the repository root:
+Configure `backend/.env` with `OPENAI_API_KEY`, then run from the repository root:
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item backend/.env.example backend/.env
 docker compose up --build
 ```
 

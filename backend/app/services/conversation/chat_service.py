@@ -47,7 +47,7 @@ class ChatService:
 		"know, and help you narrow a choice by mood, genre, or theme."
 	)
 	SAFETY_REJECTION_MESSAGE = (
-		"I can help with books, but I cannot process profanity or obscene content."
+		"I can help with books, but I cannot help you with this request."
 	)
 	def __init__(
 		self,
